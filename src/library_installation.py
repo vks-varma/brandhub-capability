@@ -9,12 +9,14 @@
 # MAGIC %pip install adal==1.2.7
 # MAGIC %pip install adlfs==2024.7.0
 # MAGIC %pip install numpy==1.22
-# MAGIC %pip install scikit-learn==1.6.0
-# MAGIC %pip install shap==0.46.0
+# MAGIC # %pip install scikit-learn==1.6.0
+# MAGIC # %pip install shap==0.46.0
 # MAGIC %pip install xgboost==2.1.3
 # MAGIC %pip install rpy2==3.5.17
 # MAGIC %pip install openpyxl==3.1.5
 # MAGIC %pip install databricks-sql-connector==3.6.0
+# MAGIC # Install specific versions
+# MAGIC %pip install scikit-learn==1.4.2 shap==0.45.1
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -58,6 +60,7 @@ from sklearn.model_selection import (
     cross_validate, train_test_split
 )
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, PolynomialFeatures
+from sklearn import metrics
 from sklearn.metrics import r2_score, mean_absolute_percentage_error, get_scorer
 from sklearn.linear_model import Lasso, Ridge, LassoCV, LinearRegression
 from sklearn.ensemble import RandomForestRegressor

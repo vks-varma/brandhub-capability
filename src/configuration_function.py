@@ -8,7 +8,7 @@
 
 dbutils.widgets.text("account_name", "npusdvdatalakesta")  # Widget for specifying the storage account name.
 dbutils.widgets.text("keyvault_name", "npusdvbrandhubidkey")  # Widget for specifying the Azure Key Vault name.
-dbutils.widgets.text("refresh_type", "model_scoring")  # Widget for defining the type of refresh (e.g., model scoring/model refresh).
+dbutils.widgets.text("refresh_type", "model_refresh")  # Widget for defining the type of refresh (e.g., model scoring/model refresh).
 dbutils.widgets.text("pre_validation_check", "True")  # Widget for enabling or disabling pre-validation checks.
 dbutils.widgets.text("scoring_refresh_check", "True")  # Widget for enabling or disabling scoring refresh checks.
 dbutils.widgets.text("post_validation_check", "True")  # Widget for enabling or disabling post-validation checks.
@@ -54,7 +54,7 @@ current_date = datetime.now().strftime("%Y-%m-01")
 prev_date = '2024-11-01'
 dv_folder = 'scorecard_refresh'
 
-time_granularity = 'weekly'
+time_granularity = 'monthly'
 group_vars = ['vendor', 'brand_group_expanded', 'category', 'date']
 
 if platform.system() == "Linux":
@@ -86,7 +86,7 @@ directory_config = {
 mapping_config = {
     "metrics_rename_mapping": f"{directory_config['support_dir']}/column_name_mapping_file_updated.csv",
     "inverse_logic_mapping": f"{directory_config['support_dir']}/inverse_metrics_creation_logic.csv",
-    "idv_list": f"{directory_config['support_dir']}/idv_list_updated.csv",
+    "idv_list": f"{directory_config['support_dir']}/idv_list.csv",
     "brand_list": f"{directory_config['support_dir']}/brand_select_list_updated.csv",
     "dashboard_metric_names_mapping": f"{directory_config['support_dir']}/dashborad_metric_names_mapping.xlsx",
     "price_class_mapping": f"{directory_config['support_dir']}/price_class_mapping.csv",
@@ -109,7 +109,7 @@ filter_config = {
         'give_advocacy_metrics_equal_weightage': False
     },
     "scaled_score" : {
-        "only_pillars" : False
+        "only_pillars" : True
     }
 }
 
@@ -120,8 +120,9 @@ refresh_config = {
     "time_granularity" : time_granularity,
     "platform" : platform_type,
     "sql_options": sql_options,
-    "start_date" : "2022-01-08",
-    "end_date" : "2023-09-30",
+    "start_date" : "2019-09-01",
+    "end_date" : "2023-12-30",
+    "run_importance_model_for_scoring_refresh": False,
     "pillars" : {
         'all_category_pillars': ['awareness_pillar', 'loyalty_pillar', 'advocacy_pillar', 'consideration_pillar'],
         'by_category_pillars': ['brand_perceptions_pillar', 'product_feedback_pillar']

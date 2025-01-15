@@ -1101,7 +1101,7 @@ def prepare_cfa_subset(cfa_data, exclude_pillars):
 def weights_creation(fit_summary_all_cat, fit_summary_all_brands, refresh_config, feat_eng_config, eq_sub_scale_merged_brand, all_pillar_results, equity_dt):
 
     # Initialize category and model configuration variables
-    category_list_pillar = eq_sub_scale_merged_brand['Category'].unique()
+    category_list_pillar = eq_sub_scale_merged_brand['category'].unique()
     # category_list_pillar = refresh_config["pillars"]["all_category_pillars"] + refresh_config["pillars"]["by_category_pillars"]
     exclude_pillars = feat_eng_config["cfa"]["exclude_pillars"]
     all_cat_pillars = feat_eng_config["cfa"]["pillars"]["all_category_pillars"]
@@ -1164,7 +1164,7 @@ def create_pillar_scores(scaled_df, weights_sheet,req_cols, category, pillar, eq
     metric_weights = metric_weights[metric_weights['metric'].isin(relevant_cols)].sort_values(by='metric')
     
     # Calculate weighted scores for the pillar
-    scaled_df_sub[pillar] = scaled_df_sub[relevant_cols].fillna(0).dot(metric_weights['weight'].values)
+    scaled_df_sub[pillar] = scaled_df_sub[relevant_cols].dot(metric_weights['weight'].values)
         
     # Append the results to eq_sub2
     eq_sub2 = pd.concat([eq_sub2, scaled_df_sub], ignore_index=True)
@@ -1271,7 +1271,7 @@ def create_pillar_scores(scaled_df, weights_sheet,req_cols, category, pillar, eq
 
 def pillar_trend_creation(index_df, brand, category, pillar, refresh_config):
     # Determine rolling mean period based on time granularity
-    rolling_mean = 3 if refresh_config["time_granularity"] == "Monthly" else 13
+    rolling_mean = 3 if refresh_config["time_granularity"] == "monthly" else 13
     
     df_data = index_df.copy()
     # Identify pillar columns
@@ -1279,7 +1279,7 @@ def pillar_trend_creation(index_df, brand, category, pillar, refresh_config):
     # print('pillar_cols:', pillar_cols)
 
     # Keep only relevant columns
-    df_data = df_data[['date', 'brand', 'category'] + pillar_cols + [refresh_config["DV"]]]
+    df_data = df_data[['date', 'brand', 'category'] + pillar_cols + [refresh_config["dv"]]]
     
     # Drop existing trend columns
     trend_cols = [col for col in df_data.columns if col.endswith('_trend')]
@@ -1354,7 +1354,7 @@ def lag_addition(dataset):
     ret_df = pd.DataFrame()
     
     # Identify columns that will not have lags
-    cols_no_lag = ['date', 'category', 'brand', refresh_config["DV"]]
+    cols_no_lag = ['date', 'category', 'brand', refresh_config["dv"]]
     basecols = dataset.columns.difference(cols_no_lag).tolist()
 
     # Iterate over each unique brand and category to create lagged features
@@ -1483,7 +1483,7 @@ def pillar_importance_model(trend_pillars_data, sales_data, feat_eng_config, bra
 
     rms_teneten_df.rename(columns={'brand_group_expanded':'brand'},inplace=True)
 
-    final_df.drop(columns=['equalized_volume'],inplace=True)
+    # final_df.drop(columns=['equalized_volume'],inplace=True)
 
     final_df = final_df.merge(rms_teneten_df,on=['date', 'category', 'brand'],how='left')
 
@@ -2025,7 +2025,6 @@ def compute_scaled_scores(date, category, df1, grouped, pillar_columns, columns_
         new_column_name = f"{column_name}_scores"
         average = subset[column_name].values[0]  # Assumes there's at least one row in subset
         subset1[new_column_name] = (subset1[column_name] - average) * 100 + 100
-
     return subset1
 
 # Main function to set up the data and prepare for processing
@@ -2035,13 +2034,13 @@ def scaled_scores_prep(pillar_data, feat_eng_config, filter_config, refresh_conf
 
     # Define relevant columns for grouping and scaling
     pillar_columns = [col for col in pillar_data.columns if col.endswith('_pillar')]
-    additional_columns = ['date', 'category', refresh_config["DV"], 'brand']
+    additional_columns = ['date', 'category', refresh_config["dv"], 'brand']
 
-    if feat_eng_config["scaled_score"]["only_pillars"]:
+    if filter_config["scaled_score"]["only_pillars"]:
         grouped = pillar_data.groupby(['date', 'category'])[pillar_columns].mean().reset_index()
         df1 = pillar_data[additional_columns + pillar_columns]
     else:
-        columns_to_mean = pillar_data.columns.difference(['date', 'brand', 'category', refresh_config["DV"]]).tolist()
+        columns_to_mean = pillar_data.columns.difference(['date', 'brand', 'category', refresh_config["dv"]]).tolist()
         grouped = pillar_data.groupby(['date', 'category'])[columns_to_mean].mean().reset_index()
         df1 = pillar_data
 
@@ -2236,7 +2235,7 @@ def updated_scorecard_format(detailed, harmonized_data, pillar_importances, dash
 
 # COMMAND ----------
 
-def scoring(input_config, output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type, staging_output_path, static_output_path):
+def scoring(input_config, output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type):
     '''
     scoring()
     1. weights creation (using cfa and rf1 results)
@@ -2256,12 +2255,13 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
 
     equity_dt = pd.read_csv(output_config["data_prep"]["equity_dt"], storage_options = storage_options)
     # Convert the 'date' column to datetime format
+    eq_sub_scale_merged_brand['date'] = pd.to_datetime(eq_sub_scale_merged_brand['date'], utc=False)
     equity_dt['date'] = pd.to_datetime(equity_dt['date'], utc=False)
 
     processed_harmonized_data = pd.read_csv(output_config['processed_input_data'], storage_options = storage_options)
-
+    processed_harmonized_data['date'] = pd.to_datetime(processed_harmonized_data['date'], utc=False)
     # output_file_path = f"{static_output_path}/dashboard_metric_names_mapping.csv"
-    dashboard_metric_names_mapping = pd.read_csv(mapping_config["dashboard_metric_names_mapping"], storage_options = storage_options)
+    dashboard_metric_names_mapping = pd.read_excel(mapping_config["dashboard_metric_names_mapping"], storage_options = storage_options)
 
     # output_file_path = f"{static_output_path}/price_class_mapping.csv"
     price_class_mapping = pd.read_csv(mapping_config["price_class_mapping"], storage_options = storage_options)
@@ -2271,10 +2271,10 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
 
     if refresh_type == "model_refresh":
         all_pillar_results = pd.read_csv(output_config["weights_model"]["model_results"], storage_options = storage_options)
-
+        # all_pillar_results["date"] = pd.to_datetime(all_pillar_results["date"], utc=False)
         nielsen_rms_data = pd.read_csv(output_config['processed_sales_data'], storage_options = storage_options)
-
-        print("post modelling 2- staging_output_path:",staging_output_path)
+        nielsen_rms_data["date"] = pd.to_datetime(nielsen_rms_data["date"], utc=False)
+        # print("post modelling 2- staging_output_path:",staging_output_path)
 
         fit_summary_all_cat = pd.read_csv(output_config["cfa"]["model_results_all_category"], storage_options = storage_options)
 
@@ -2289,7 +2289,7 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
         weights_sheet = pd.read_csv(input_config["weights_sheet"], storage_options = storage_options)
     # Rename all columns to lowercase
     weights_sheet.columns = weights_sheet.columns.str.lower()
-    eq_sub_scale_merged_brand_stacked = eq_sub_scale_merged_brand[eq_sub_scale_merged_brand['New_Brand'] == "Stacked Brand"]
+    eq_sub_scale_merged_brand_stacked = eq_sub_scale_merged_brand[eq_sub_scale_merged_brand['new_brand'] == "Stacked Brand"]
 
     index_df = pd.DataFrame()
     index_df_long = pd.DataFrame()
@@ -2311,13 +2311,13 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
     for brand in index_df['brand'].unique():
         brand_data = index_df[index_df['brand'] == brand]
         for category in brand_data['category'].unique():
-            pillar_cols = [col for col in index_df.columns if col.endswith('_pillar')]
-            for pillar in pillar_cols:
+            # pillar_cols = [col for col in index_df.columns if col.endswith('_pillar')]
+            for pillar in refresh_config["pillars"]["by_category_pillars"] + refresh_config["pillars"]["all_category_pillars"]:
                 br_cat_df = pillar_trend_creation(index_df, brand, category, pillar, refresh_config) #3. done
                 final_merged_df = pd.concat([final_merged_df, br_cat_df], ignore_index=True)
     final_merged_df.to_csv(output_config["trend_pillar"]["trend_pillars"],index=False, storage_options = storage_options)
 
-        # scaled_scores, scaled_scores_long = scaled_scores(index_df)
+    # scaled_scores, scaled_scores_long = scaled_scores(index_df)
     # Initialize processed dataframes list
     processed_dataframes = []
 
@@ -2325,14 +2325,14 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
         index_df, feat_eng_config, filter_config, refresh_config
     )
 
-    # Iterate over unique combinations of date and category
+    Iterate over unique combinations of date and category
     for _, group in unique_combinations.iterrows():
         date = group["date"]
         category = group['category']
 
         # Process a single combination
         processed_subset = compute_scaled_scores(
-            date, category, df1, grouped, pillar_columns, columns_to_mean, feat_eng_config["scaled_score"]["only_pillars"]
+            date, category, df1, grouped, pillar_columns, columns_to_mean, filter_config["scaled_score"]["only_pillars"]
         ) #5. done
 
         # Append the processed subset to the list
@@ -2342,7 +2342,7 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
     scaled_scores = pd.concat(processed_dataframes, ignore_index=True)
 
     # Melt the result DataFrame
-    columns_to_pivot = [col for col in scaled_scores.columns if col not in ['date', 'brand', 'category', refresh_config["DV"]]]
+    columns_to_pivot = [col for col in scaled_scores.columns if col not in ['date', 'brand', 'category', refresh_config["dv"]]]
     scaled_scores_long = pd.melt(scaled_scores, id_vars=['date', 'brand', 'category'], value_vars=columns_to_pivot, value_name='column_value')
 
     scaled_scores.to_csv(output_config["scaled_scores"]["scaled_pillars"],index=False, storage_options = storage_options)
@@ -2353,21 +2353,27 @@ def scoring(input_config, output_config, mapping_config, storage_options, refres
 def post_modelling(input_config,output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type):
 
     final_merged_df = pd.read_csv(output_config["trend_pillar"]["trend_pillars"], storage_options = storage_options)
+    final_merged_df["date"] = pd.to_datetime(final_merged_df["date"])
     nielsen_rms_data = pd.read_csv(output_config['processed_sales_data'], storage_options = storage_options)
+    nielsen_rms_data["date"] = pd.to_datetime(nielsen_rms_data["date"])
     index_df = pd.read_csv(output_config["pillar_creation"]["pillars"], storage_options = storage_options)
+    index_df["date"] = pd.to_datetime(index_df["date"])
     index_df_long = pd.read_csv(output_config["pillar_creation"]["pillars_long_format"], storage_options = storage_options)
-    weights_sheet = pd.read_csv(input_config["weights_sheet"], storage_options = storage_options)
+    index_df_long["date"] = pd.to_datetime(index_df_long["date"])
+    weights_sheet = pd.read_csv(output_config["pillar_creation"]["weights_sheet"], storage_options = storage_options)
     scaled_scores_long = pd.read_csv(output_config["scaled_scores"]["scaled_pillars_long_format"], storage_options = storage_options)
+    scaled_scores_long["date"] = pd.to_datetime(scaled_scores_long["date"])
     req_cols = pd.read_csv(mapping_config["idv_list"], storage_options = storage_options)
     processed_harmonized_data = pd.read_csv(output_config['processed_input_data'], storage_options = storage_options)
+    processed_harmonized_data["date"] = pd.to_datetime(processed_harmonized_data["date"])
 
     if (refresh_type == "model_refresh") | ((refresh_type == "model_scoring") & (refresh_config["run_importance_model_for_scoring_refresh"] == True)):
         # results_all_model = pillar_importance_model(final_merged_df, nielsen_rms_data)
         results_all_model = pd.DataFrame()
         for brand in final_merged_df.brand.unique():
             br_df = final_merged_df[final_merged_df['brand'] == brand]
-            for category in br_df['category_new'].unique():
-                results = pillar_importance_model(final_merged_df, nielsen_rms_data, feat_eng_config) #4. done
+            for category in br_df['category'].unique():
+                results = pillar_importance_model(final_merged_df, nielsen_rms_data, feat_eng_config, brand, category) #4. done
                 results_all_model = pd.concat([results_all_model, results])
 
     if (refresh_type == "model_refresh") | ((refresh_type == "model_scoring") & (refresh_config["run_importance_model_for_scoring_refresh"] == True)):
@@ -2540,5 +2546,56 @@ def post_modelling(input_config,output_config, mapping_config, storage_options, 
 #     print("summary path:",output_config["updated_scorecard"]["updated_summary"])
 #     updated_summary.to_csv(output_config["updated_scorecard"]["updated_summary"],index=False, storage_options = storage_options)
 #     updated_pillar_importances.to_csv(output_config["updated_scorecard"]["updated_pillar_importances"],index=False, storage_options = storage_options)
+
+
+
+# COMMAND ----------
+
+# Initialize processed dataframes list
+processed_dataframes = []
+
+# Convert date column to datetime
+pillar_data['date'] = pd.to_datetime(pillar_data['date'], format="%Y-%m-%d")
+
+# Define relevant columns for grouping and scaling
+pillar_columns = [col for col in pillar_data.columns if col.endswith('_pillar')]
+additional_columns = ['date', 'category', refresh_config["dv"], 'brand']
+
+if filter_config["scaled_score"]["only_pillars"]:
+    grouped = pillar_data.groupby(['date', 'category'])[pillar_columns].mean().reset_index()
+    df1 = pillar_data[additional_columns + pillar_columns]
+else:
+    columns_to_mean = pillar_data.columns.difference(['date', 'brand', 'category', refresh_config["dv"]]).tolist()
+    grouped = pillar_data.groupby(['date', 'category'])[columns_to_mean].mean().reset_index()
+    df1 = pillar_data
+
+# Extract unique combinations of date and category
+unique_combinations = df1[['date', 'category']].drop_duplicates()
+
+# Iterate over unique combinations of date and category
+for _, group in unique_combinations.iterrows():
+    date = group["date"]
+    category = group['category']
+
+    # Process a single combination
+    subset1 = df1[(df1['date'] == date) & (df1['category'] == category)].copy()
+    subset = grouped[(grouped['date'] == date) & (grouped['category'] == category)]
+
+    for column_name in (pillar_columns if only_pillars else columns_to_mean):
+        new_column_name = f"{column_name}_scores"
+        average = subset[column_name].values[0]  # Assumes there's at least one row in subset
+        subset1[new_column_name] = (subset1[column_name] - average) * 100 + 100
+
+    # Append the processed subset to the list
+    processed_dataframes.append(subset1)
+
+# Combine all processed dataframes
+scaled_scores = pd.concat(processed_dataframes, ignore_index=True)
+
+# Melt the result DataFrame
+columns_to_pivot = [col for col in scaled_scores.columns if col not in ['date', 'brand', 'category', refresh_config["dv"]]]
+scaled_scores_long = pd.melt(scaled_scores, id_vars=['date', 'brand', 'category'], value_vars=columns_to_pivot, value_name='column_value')
+
+# COMMAND ----------
 
 

@@ -142,6 +142,29 @@ def create_percentage_columns(df):
 
 # COMMAND ----------
 
+# def create_inverse_metrics(df, inverse_logic_df):
+#     df_copy = df.copy()
+#     inverse_logic_df = inverse_logic_df.reset_index(drop=True)
+
+#     for _, row in inverse_logic_df.iterrows():
+#         operation = row['operation']
+#         new_col_name = row['new_name']
+        
+#         # Handle subtraction operation
+#         if operation == 'sub':
+#             value = float(row['values'])
+#             raw_col = row['raw_cols']
+#             df_copy[new_col_name] = value - df_copy[raw_col]
+        
+#         # Handle addition operation
+#         elif operation == 'add':
+#             cols_to_add = row['values'].split('+')
+#             df_copy[new_col_name] = df_copy[cols_to_add].sum(axis=1)
+
+#     return df_copy
+
+# COMMAND ----------
+
 def create_inverse_metrics(df, inverse_logic_df):
     df_copy = df.copy()
     inverse_logic_df = inverse_logic_df.reset_index(drop=True)
@@ -154,14 +177,17 @@ def create_inverse_metrics(df, inverse_logic_df):
         if operation == 'sub':
             value = float(row['values'])
             raw_col = row['raw_cols']
-            df_copy[new_col_name] = value - df_copy[raw_col]
+            # Ensure subtraction result is NaN if all involved values are NaN
+            df_copy[new_col_name] = np.where(df_copy[raw_col].isnull(), np.nan, value - df_copy[raw_col])
         
         # Handle addition operation
         elif operation == 'add':
             cols_to_add = row['values'].split('+')
-            df_copy[new_col_name] = df_copy[cols_to_add].sum(axis=1)
+            # Ensure addition result is NaN if all involved values are NaN
+            df_copy[new_col_name] = df_copy[cols_to_add].apply(lambda x: x.sum() if not x.isnull().all() else np.nan, axis=1)
 
     return df_copy
+
 
 # COMMAND ----------
 
@@ -561,11 +587,17 @@ def harmonized_data_prep(input_config, output_config, mapping_config, refresh_co
     inverse_logic_df = pd.read_csv(mapping_config["inverse_logic_mapping"], storage_options=storage_options)
     
     # if spark.conf.get("spark.databricks.clusterUsageTags.clusterName", "Cluster name not found").startswith("NPUS-PR-"):
-    if spark.conf.get("spark.databricks.clusterUsageTags.clusterName", "Cluster name not found").startswith("NPUS-"):
+    if spark.conf.get("spark.databricks.clusterUsageTags.clusterName", "Cluster name not found").startswith("NPUS-PR"):
         nielsen_rms_data = nielsen_rms_data_extraction(dbs_sql_hostname,dbs_sql_http_path,dbs_sql_token)
     else:
-        nielsen_rms_data = pd.read_csv(input_config["current_sales_data"], storage_options=storage_options)
+        # nielsen_rms_data = pd.read_csv(input_config["current_sales_data"], storage_options=storage_options)
+        nielsen_rms_data = pd.read_csv("abfss://restricted-dataoperations@npusdvdatalakesta.dfs.core.windows.net/staging/cmi_brand_hub/fazil/rms_tenten_monthly_19_9_24_blue.csv", storage_options=storage_options)
         nielsen_rms_data.columns = nielsen_rms_data.columns.str.lower()
+        # Ensure the correct column names are used
+        nielsen_rms_data['date'] = pd.to_datetime(
+            nielsen_rms_data[['year_rt', 'month_rt']].rename(columns={'year_rt': 'year', 'month_rt': 'month'}).assign(day=1)
+        )
+
         # if refresh_config["time_granularity"] == "weekly":
         #     nielsen_rms_data['date'] = nielsen_rms_data['date'].str.split('T').str[0]
         #     nielsen_rms_data['date'] = pd.to_datetime(nielsen_rms_data['date'], utc=False)
@@ -576,16 +608,18 @@ def harmonized_data_prep(input_config, output_config, mapping_config, refresh_co
         #     #         'week_ending': 'date'
         #     #     }, inplace=True)
         # else:
-        nielsen_rms_data['date'] = nielsen_rms_data['date'].str.split('T').str[0]
+        # nielsen_rms_data['date'] = nielsen_rms_data['date'].str.split('T').str[0]
         nielsen_rms_data["date"] = pd.to_datetime(nielsen_rms_data["date"], utc=False)
-        nielsen_rms_data.rename(columns={"eq_volume" : "equalized_volume"}, inplace=True)
+        nielsen_rms_data.rename(columns={"eq_volume" : "equalized_volume","brand_rt":"brand_group_expanded","category_rt":"category"}, inplace=True)
         nielsen_rms_data["average_price"] = nielsen_rms_data["total_sales"]/nielsen_rms_data["total_units"]
 
-    if refresh_config["platform"] == "databricks":
-        harmonized_df = harmonized_data_extraction(time_granularity = refresh_config["time_granularity"])
-    elif refresh_config["platform"] == "local":
-        harmonized_df = pd.read_csv(input_config["harmonized_data"])
-        
+    # if refresh_config["platform"] == "databricks":
+    #     harmonized_df = harmonized_data_extraction(time_granularity = refresh_config["time_granularity"])
+    # elif refresh_config["platform"] == "local":
+    #     harmonized_df = pd.read_csv(input_config["harmonized_data"])
+
+    harmonized_df = pd.read_csv("abfss://restricted-dataoperations@npusdvdatalakesta.dfs.core.windows.net/staging/cmi_brand_hub/fazil/harmonized_data_rms_tenten_blue_19_9_24_monthly.csv", storage_options=storage_options)
+    harmonized_df.rename(columns={"Date":"date"},inplace=True)
     harmonized_df['date'] = pd.to_datetime(harmonized_df['date'], utc=False)
 
     harmonized_df.to_csv(f"{output_config['raw_input_data']}", index=False,storage_options=storage_options)
@@ -635,11 +669,11 @@ def pre_validation(input_config,output_config,mapping_config,refresh_config,stor
 
     processed_harmonized_data =harmonized_data_prep(input_config,output_config,mapping_config,refresh_config)
     print("harmonized_data saved...")
-    data_comp_harmonized=harmonized_data_comparison(old_data_path = input_config["prev_harmonized_data"], new_data_path = input_config["current_harmonized_data"], sales_or_harmonized = "harmonized")
+    # data_comp_harmonized=harmonized_data_comparison(old_data_path = input_config["prev_harmonized_data"], new_data_path = input_config["current_harmonized_data"], sales_or_harmonized = "harmonized")
 
     # data_comp_sales=harmonized_data_comparison(old_data_path = f"abfss://{dataoperations_name}@{account_name}.dfs.core.windows.net/staging/cmi_brand_hub/fazil/pre_validation_data/old_refresh_sample/data/sales_data.csv", new_data_path = f"abfss://{dataoperations_name}@{account_name}.dfs.core.windows.net/staging/cmi_brand_hub/fazil/pre_validation_data/new_refresh_sample/data/sales_data.csv", sales_or_harmonized = "sales")
 
-    generate_filtered_df(data_comp_harmonized, sales_or_harmonized = "harmonized",output_path=output_config["updated_scorecard"]["pre_validation_report"], storage_options = storage_options)
+    # generate_filtered_df(data_comp_harmonized, sales_or_harmonized = "harmonized",output_path=output_config["updated_scorecard"]["pre_validation_report"], storage_options = storage_options)
 
     
     # data_sufficiency_df = harmonized_data_sufficiency(data_path = f"abfss://{dataoperations_name}@{account_name}.dfs.core.windows.net/staging/cmi_brand_hub/fazil/pre_validation_data/new_refresh_sample/data/harmonized_data.csv")

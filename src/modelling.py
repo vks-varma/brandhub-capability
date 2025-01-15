@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-# %run ./configuration_function
+# MAGIC %run ./configuration_function
 
 # COMMAND ----------
 
@@ -1254,7 +1254,7 @@ def cfa(output_config, refresh_config, feat_eng_config, eq_sub_scale_merged_bran
     # R cell with function
     robjects.r('''
     # List of required packages
-    required_packages <- c("lavaan", "dplyr", "data.table", "semTools", "magrittr", "tidyr")
+    required_packages <- c("dplyr", "data.table", "semTools", "magrittr", "tidyr")
 
     # Check for missing packages
     missing_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
@@ -1266,14 +1266,14 @@ def cfa(output_config, refresh_config, feat_eng_config, eq_sub_scale_merged_bran
     message("All required packages are already installed.")
     }
 
-    # required_packages <- c("lavaan", "dplyr", "data.table", "semTools", "magrittr", "tidyr")
+    # Ensure devtools is installed
+    if (!requireNamespace("devtools", quietly = TRUE)) {
+        install.packages("devtools")
+    }
 
-    # # Check for missing packages and install them
-    # missing_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
-    # print(missing_packages)
-    # if(length(missing_packages) > 0) {
-    #     install.packages(missing_packages)
-    #     }
+    # Install specific version of lavaan
+    devtools::install_version("lavaan", version = "0.6-17", repos = "http://cran.us.r-project.org")
+
 
     # Load libraries
     library(lavaan)        # For Confirmatory Factor Analysis (CFA)
@@ -1586,7 +1586,7 @@ def cfa(output_config, refresh_config, feat_eng_config, eq_sub_scale_merged_bran
 
 # COMMAND ----------
 
-def run_model_type(model_type, feat_eng_config, refresh_config, X_train, y_train, X_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title):
+def run_model_type(model_type, feat_eng_config, refresh_config, X_train, y_train, X_test_hold, y_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title):
     """
     Function to handle both RandomForest and XGBoost models.
     Arguments:
@@ -1609,11 +1609,16 @@ def run_model_type(model_type, feat_eng_config, refresh_config, X_train, y_train
         model_class = RandomForestRegressor
     elif model_type == "XGBoost":
         model_class = xgb.XGBRegressor
+    # param_grid = {
+    #     "max_depth": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["max_depth"],
+    #     "n_estimators": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["n_estimators"],
+    #     "learning_rate": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["learning_rate"],
+    #     "random_state": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["random_state"]
+    # }
     param_grid = {
-        "max_depth": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["max_depth"],
-        "n_estimators": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["n_estimators"],
-        "learning_rate": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["learning_rate"],
-        "random_state": feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]["random_state"]
+        key: feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"][key]
+        for key in feat_eng_config["weights_model"]["hyperparameters"][model_type]["grid_search"]
+        if key != "eval_metrics"  # Exclude eval_metrics if not needed
     }
 
     # Perform grid search for hyperparameter tuning
@@ -1685,7 +1690,7 @@ def run_model_type(model_type, feat_eng_config, refresh_config, X_train, y_train
     results_all_model['Trial name'] = temp_title
     results_all_model['Best_Params_Gridsearchcv'] = str(search.best_params_)
 
-    results_all_model = pd.concat([results_all_model, results_all_model], axis=0)
+    # results_all_model = pd.concat([results_all_model, results_all_model], axis=0)
 
     actual_vs_predicted = pd.DataFrame()
     actual_vs_predicted['Actual'] = train_y_all
@@ -1727,7 +1732,7 @@ def metric_weights_model(pillar, brand_name, category_name, modeling_data, feat_
     attr_df.columns = attr_df.columns.str.lower()
 
     ## Correcting column names for the dataframe to run Framework
-    attr_df.rename(columns={'brand_rt':'brand','category':'c_category','category_rt':'c_category','market_share_total_sales_rt':'market_share_total_sales'},inplace=True)
+    attr_df.rename(columns={'brand_rt':'brand','category':'c_category','category_rt':'c_category','market_share_total_sales_rt':'market_share_total_sales','market_share':'market_share_total_sales'},inplace=True)
     print(pillar)
     Metric_Group_list =[]
     Metric_Group_list.append(pillar)
@@ -1989,11 +1994,11 @@ def metric_weights_model(pillar, brand_name, category_name, modeling_data, feat_
                     feat_df=pd.DataFrame()
 
                     if refresh_config["weights_models"]["RandomForest"]["run"] == True:
-                        results_all_model, actual_vs_predicted = run_model_type("RandomForest", feat_eng_config, refresh_config, X_train, y_train, X_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title)
+                        results_all_model, actual_vs_predicted = run_model_type("RandomForest", feat_eng_config, refresh_config, X_train, y_train, X_test_hold, y_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title)
                         # Process results_rf and actual_rf as needed
 
                     if refresh_config["weights_models"]["XGBoost"]["run"] == True:
-                        results_all_model, actual_vs_predicted = run_model_type("XGBoost", feat_eng_config, refresh_config, X_train, y_train, X_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title)  
+                        results_all_model, actual_vs_predicted = run_model_type("XGBoost", feat_eng_config, refresh_config, X_train, y_train, X_test_hold, y_test_hold, train_x_all, train_y_all, dv, brand_name, category_name, pillar_name, temp_title)  
 
     return results_all_model, actual_vs_predicted
 
@@ -2018,8 +2023,7 @@ def modelling(input_config,output_config,mapping_config,refresh_config, feat_eng
     #rf1
     all_pillar_results = pd.DataFrame()
     for pillar in feat_eng_config["weights_model"]["pillars_list"]:
-        # for brand_name in list(brand_list_dict.keys()):
-        for brand_name in ["FRISKIES","DOG CHOW LINE"]:
+        for brand_name in list(brand_list_dict.keys()):
             for category_name in brand_list_dict[brand_name]:
                 
                 results_all_model, actual_vs_predicted = metric_weights_model(pillar, brand_name, category_name, modeling_data, feat_eng_config, req_cols, refresh_config)
@@ -2029,3 +2033,13 @@ def modelling(input_config,output_config,mapping_config,refresh_config, feat_eng
                 all_pillar_results = all_pillar_results.drop_duplicates().reset_index(drop=True)
 
     all_pillar_results.to_csv(output_config["weights_model"]["model_results"],index=False, storage_options = storage_options)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC R - 4.2.3 ,
+# MAGIC lavaan - 0.617
+# MAGIC
+# MAGIC python - 3.9.19 ,
+# MAGIC sklearn - 1.4.2 ,
+# MAGIC shap - 0.45.1
