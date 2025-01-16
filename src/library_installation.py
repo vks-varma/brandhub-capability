@@ -26,77 +26,99 @@
 
 # COMMAND ----------
 
+import calendar
+import configparser
+import glob
+import json
+import math
+
 # Standard library imports
 import os
+import platform
+import re
+import subprocess
 import sys
-import math
-import json
 import time
 import warnings
-import platform
-import subprocess
-import re
-import glob
-import configparser
-import calendar
+from calendar import month_abbr
 from datetime import datetime, timedelta
 from functools import reduce
 from itertools import chain
-from calendar import month_abbr
-
-# Data science and numerical computation
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import shap
-from matplotlib import pyplot
-from scipy import stats
-from statsmodels.tsa.stattools import adfuller
-
-# Machine learning imports
-from sklearn.model_selection import (
-    cross_val_score, StratifiedKFold, KFold, RepeatedKFold, GridSearchCV,
-    cross_validate, train_test_split
-)
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, PolynomialFeatures
-from sklearn import metrics
-from sklearn.metrics import r2_score, mean_absolute_percentage_error, get_scorer
-from sklearn.linear_model import Lasso, Ridge, LassoCV, LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_selection import RFECV
-from sklearn.inspection import permutation_importance
-from sklearn.decomposition import PCA
-import xgboost as xgb
-
-# Visualization and interactive tools
-import ipywidgets as widgets
-from IPython.display import display
-
-# Azure and Databricks-specific imports
-from azure.identity import ClientSecretCredential
-from azure.storage.blob import BlobServiceClient
-from adlfs import AzureBlobFileSystem
-import databricks.sql as sql
-
-# PySpark imports
-from pyspark.sql import functions as F
-from pyspark.sql.functions import (
-    concat_ws, lower, col, translate, mean, sum, expr, concat,
-    lit, to_date, lpad, year
-)
-from pyspark.sql.window import Window
 
 # External library imports
 import fsspec
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Data science and numerical computation
+import pandas as pd
 import pyodbc
-import adal
+
+# import rpy2.robjects as ro
+import seaborn as sns
+import shap
+import xgboost as xgb
+from matplotlib import pyplot
 
 # R and Python integration
-from rpy2 import robjects
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
-from rpy2.robjects import pandas2ri
+# from rpy2 import robjects
+# from rpy2.robjects import pandas2ri
+# from rpy2.robjects.packages import importr
+from scipy import stats
+from sklearn import metrics
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_selection import RFECV
+from sklearn.inspection import permutation_importance
+from sklearn.linear_model import Lasso, LassoCV, LinearRegression, Ridge
+from sklearn.metrics import (
+    get_scorer,
+    mean_absolute_percentage_error,
+    r2_score,
+)
+
+# Machine learning imports
+from sklearn.model_selection import (
+    GridSearchCV,
+    KFold,
+    RepeatedKFold,
+    StratifiedKFold,
+    cross_val_score,
+    cross_validate,
+    train_test_split,
+)
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    PolynomialFeatures,
+    StandardScaler,
+)
+from statsmodels.tsa.stattools import adfuller
+
+# import adal
+
+
+
+
+
+# # Visualization and interactive tools
+# import ipywidgets as widgets
+# from IPython.display import display
+
+# # Azure and Databricks-specific imports
+# from azure.identity import ClientSecretCredential
+# from azure.storage.blob import BlobServiceClient
+# from adlfs import AzureBlobFileSystem
+# import databricks.sql as sql
+
+# # PySpark imports
+# from pyspark.sql import functions as F
+# from pyspark.sql.functions import (
+#     concat_ws, lower, col, translate, mean, sum, expr, concat,
+#     lit, to_date, lpad, year
+# )
+# from pyspark.sql.window import Window
+
+
 
 print("All required libraries are installed.")
 
@@ -112,7 +134,7 @@ def Adlsg2_authentication(account_name,kv_name,client_secret,client_id, tenant_i
     :param client_secret azure service principle client secret
     :param client_id azure service principle client id
     :param tenant_id azure service principle tenant id
-    
+
     :returns
     None
     """

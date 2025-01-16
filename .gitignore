@@ -1,0 +1,5 @@
+*.csv
+*.yml
+*.txt
+*.ipynb
+*.pyc

@@ -1,73 +1,78 @@
 # Databricks notebook source
 # MAGIC %run ./library_installation
 
+import os
+
 # COMMAND ----------
+from datetime import datetime
+
+platform_type = "local"
 
 # Define interactive widgets in Databricks to accept user inputs for key configuration parameters.
 # These widgets allow dynamic parameterization of the notebook, making it reusable for different configurations.
 
-dbutils.widgets.text("account_name", "npusdvdatalakesta")  # Widget for specifying the storage account name.
-dbutils.widgets.text("keyvault_name", "npusdvbrandhubidkey")  # Widget for specifying the Azure Key Vault name.
-dbutils.widgets.text("refresh_type", "model_refresh")  # Widget for defining the type of refresh (e.g., model scoring/model refresh).
-dbutils.widgets.text("pre_validation_check", "True")  # Widget for enabling or disabling pre-validation checks.
-dbutils.widgets.text("scoring_refresh_check", "True")  # Widget for enabling or disabling scoring refresh checks.
-dbutils.widgets.text("post_validation_check", "True")  # Widget for enabling or disabling post-validation checks.
+if platform_type == "databricks":
+    dbutils.widgets.text("account_name", "npusdvdatalakesta")  # Widget for specifying the storage account name.
+    dbutils.widgets.text("keyvault_name", "npusdvbrandhubidkey")  # Widget for specifying the Azure Key Vault name.
+    dbutils.widgets.text("refresh_type", "model_refresh")  # Widget for defining the type of refresh (e.g., model scoring/model refresh).
+    dbutils.widgets.text("pre_validation_check", "True")  # Widget for enabling or disabling pre-validation checks.
+    dbutils.widgets.text("scoring_refresh_check", "True")  # Widget for enabling or disabling scoring refresh checks.
+    dbutils.widgets.text("post_validation_check", "True")  # Widget for enabling or disabling post-validation checks.
 
 
-# COMMAND ----------
+    # COMMAND ----------
 
-# Retrieve the values entered or selected in the widgets.
-# These values will be used in the subsequent logic to control the notebook's behavior dynamically.
+    # Retrieve the values entered or selected in the widgets.
+    # These values will be used in the subsequent logic to control the notebook's behavior dynamically.
 
-account_name = dbutils.widgets.get('account_name')  # Fetch the storage account name from the widget.
-keyvault_name = dbutils.widgets.get('keyvault_name')  # Fetch the Azure Key Vault name from the widget.
-refresh_type = dbutils.widgets.get('refresh_type')  # Fetch the type of refresh selected by the user.
-pre_validation_check = dbutils.widgets.get('pre_validation_check')  # Retrieve the pre-validation check setting (True/False).
-scoring_refresh_check = dbutils.widgets.get('scoring_refresh_check')  # Retrieve the scoring refresh check setting (True/False).
-post_validation_check = dbutils.widgets.get('post_validation_check')  # Retrieve the post-validation check setting (True/False).
-
-
-# COMMAND ----------
+    account_name = dbutils.widgets.get('account_name')  # Fetch the storage account name from the widget.
+    keyvault_name = dbutils.widgets.get('keyvault_name')  # Fetch the Azure Key Vault name from the widget.
+    refresh_type = dbutils.widgets.get('refresh_type')  # Fetch the type of refresh selected by the user.
+    pre_validation_check = dbutils.widgets.get('pre_validation_check')  # Retrieve the pre-validation check setting (True/False).
+    scoring_refresh_check = dbutils.widgets.get('scoring_refresh_check')  # Retrieve the scoring refresh check setting (True/False).
+    post_validation_check = dbutils.widgets.get('post_validation_check')  # Retrieve the post-validation check setting (True/False).
 
 
-client_secret=dbutils.secrets.get(scope = keyvault_name, key = 'brandhub-spn-secret')
-client_id=dbutils.secrets.get(scope = keyvault_name, key = 'brandhub-spn-id')
-tenant_id=dbutils.secrets.get(scope = keyvault_name, key = 'tenant-id')
+    # COMMAND ----------
 
-dbs_sql_hostname=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-hostname')
-dbs_sql_http_path=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-http-path')
-dbs_sql_token=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-token')
 
-Adlsg2_authentication(account_name,keyvault_name,client_secret,client_id, tenant_id)
+    client_secret=dbutils.secrets.get(scope = keyvault_name, key = 'brandhub-spn-secret')
+    client_id=dbutils.secrets.get(scope = keyvault_name, key = 'brandhub-spn-id')
+    tenant_id=dbutils.secrets.get(scope = keyvault_name, key = 'tenant-id')
 
-# COMMAND ----------
+    dbs_sql_hostname=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-hostname')
+    dbs_sql_http_path=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-http-path')
+    dbs_sql_token=dbutils.secrets.get(scope = keyvault_name, key = 'nppc-dh-databricks-token')
 
-credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-fs = AzureBlobFileSystem(account_name=account_name, credential=credential)
+    Adlsg2_authentication(account_name,keyvault_name,client_secret,client_id, tenant_id)
+
+    # COMMAND ----------
+
+    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+    fs = AzureBlobFileSystem(account_name=account_name, credential=credential)
 
 # COMMAND ----------
 
 inputdata_blob_name = 'restricted-published'
 dataoperations_name = 'restricted-dataoperations'
 outputdata_blob_name = 'general-published'
-current_date = datetime.now().strftime("%Y-%m-01")
+current_date = datetime.now().replace(day=1).strftime("%Y-%m-%d")
 prev_date = '2024-11-01'
 dv_folder = 'scorecard_refresh'
 
 time_granularity = 'monthly'
 group_vars = ['vendor', 'brand_group_expanded', 'category', 'date']
 
-if platform.system() == "Linux":
-    platform_type = "databricks"
-else:
-    platform_type = "local"
+
 
 if platform_type == "databricks":
     main_dir = f"abfss://{dataoperations_name}@{account_name}.dfs.core.windows.net/"
     storage_options = {'tenant_id': tenant_id, 'client_id': client_id, 'client_secret': client_secret}
     sql_options = {'dbs_sql_hostname': dbs_sql_hostname, 'http_path': dbs_sql_http_path, 'token': dbs_sql_token}
 else:
-    main_dir = "./"
+    main_dir = "../"
+    storage_options = None
+    sql_options = None
 
 apps_dir = 'apps/cmi_brand_hub/'
 staging_dir = 'staging/cmi_brand_hub/'
@@ -160,28 +165,49 @@ refresh_config = {
 # COMMAND ----------
 
 input_config = {
-    "current_sales_data": f"{directory_config['current_staging_dir']}raw_input_data/nielsen_rms_data.csv",
+    "current_sales_data": f"{directory_config['current_staging_dir']}raw_input_data/rms_tenten_monthly_19_9_24_blue.csv",
     "prev_sales_data": f"{directory_config['prev_staging_dir']}raw_input_data/nielsen_rms_data.csv",
-    "current_harmonized_data": f"{directory_config['current_staging_dir']}processed_input_data/harmonized_data_processed.csv",
+    "current_harmonized_data": f"{directory_config['current_staging_dir']}raw_input_data/harmonized_data_rms_tenten_blue_19_9_24_monthly.csv",
     "prev_harmonized_data": f"{directory_config['prev_staging_dir']}processed_input_data/harmonized_data_processed.csv"
 }
 
 # COMMAND ----------
 
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/processed_input_data")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/raw_input_data")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/data_prep")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/cfa")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/weights_model")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/pillar_creation")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/trend_pillar")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/importance_model")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/scaled_scores")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/pillar_importances")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/scorecard")
-dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/updated_scorecard")
+if platform_type == 'databricks':
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/processed_input_data")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/raw_input_data")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/data_prep")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/cfa")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/weights_model")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/pillar_creation")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/trend_pillar")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/importance_model")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/scaled_scores")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/pillar_importances")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/scorecard")
+    dbutils.fs.mkdirs(f"{directory_config['current_staging_dir']}/updated_scorecard")
 
-print("output folders created:",directory_config['current_staging_dir'])
+    print("output folders created:",directory_config['current_staging_dir'])
+
+if platform_type == "local":
+
+
+
+    # Local directory creation using the same format as Databricks code
+    os.makedirs(f"{directory_config['current_staging_dir']}/processed_input_data", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/raw_input_data", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/data_prep", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/cfa", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/weights_model", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/pillar_creation", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/trend_pillar", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/importance_model", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/scaled_scores", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/pillar_importances", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/scorecard", exist_ok=True)
+    os.makedirs(f"{directory_config['current_staging_dir']}/updated_scorecard", exist_ok=True)
+
+    print("Output folders created:", directory_config['current_staging_dir'])
 
 # COMMAND ----------
 
@@ -362,7 +388,7 @@ feat_eng_config = {
         }
     }
 }
-
+print("config file complete")
 # COMMAND ----------
 
 # %run ./pre_validation
@@ -437,5 +463,4 @@ feat_eng_config = {
 # MAGIC
 
 # COMMAND ----------
-
 

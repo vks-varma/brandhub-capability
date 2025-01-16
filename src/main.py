@@ -27,16 +27,14 @@
 
 # COMMAND ----------
 
-if  pre_validation_check:
+
+from configuration_function import *
+from data_preparation import *
+from pre_validation import *
+
+if  True:
     pre_validation(input_config,output_config,mapping_config,refresh_config,storage_options)
 
-# COMMAND ----------
-
-import time
-
-while True:
-    print("Keeping the cluster alive...")
-    time.sleep(1500)  # Sleep for 30 minutes (1800 seconds)
 
 # COMMAND ----------
 
@@ -44,7 +42,7 @@ while True:
 
 # COMMAND ----------
 
-data_preparation(input_config,output_config,mapping_config,refresh_config,filter_config,storage_options, refresh_type)
+# data_preparation(input_config,output_config,mapping_config,refresh_config,filter_config,storage_options, refresh_type)
 
 # COMMAND ----------
 
@@ -52,25 +50,25 @@ data_preparation(input_config,output_config,mapping_config,refresh_config,filter
 
 # COMMAND ----------
 
-# if scoring_refresh_check == False:
-modelling(input_config,output_config,mapping_config,refresh_config, feat_eng_config,filter_config,storage_options, refresh_type)
+# # if scoring_refresh_check == False:
+# modelling(input_config,output_config,mapping_config,refresh_config, feat_eng_config,filter_config,storage_options, refresh_type)
 
 
-# COMMAND ----------
+# # COMMAND ----------
 
-# MAGIC %run ./post_modelling
+# # MAGIC %run ./post_modelling
 
-# COMMAND ----------
+# # COMMAND ----------
 
-scoring(input_config, output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
+# scoring(input_config, output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
 
-post_modelling(input_config,output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
+# post_modelling(input_config,output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
 
 
-# COMMAND ----------
+# # COMMAND ----------
 
-if post_validation_check: 
-    post_validation(input_config,output_config)
+# if post_validation_check:
+#     post_validation(input_config,output_config)
 
 # COMMAND ----------
 
