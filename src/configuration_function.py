@@ -162,7 +162,7 @@ mapping_config = {
     "inverse_logic_mapping": f"{directory_config['support_dir']}/inverse_metrics_creation_logic.csv",
     "idv_list": f"{directory_config['support_dir']}/idv_list.csv",
     "brand_list": f"{directory_config['support_dir']}/brand_select_list_updated.csv",
-    "dashboard_metric_names_mapping": f"{directory_config['support_dir']}/dashborad_metric_names_mapping.xlsx",
+    "dashboard_metric_names_mapping": f"{directory_config['support_dir']}/dashborad_metric_names_mapping.csv",
     "price_class_mapping": f"{directory_config['support_dir']}/price_class_mapping.csv",
     "panel_rename_mapping": f"{directory_config['support_dir']}/panel_new_names_mapping.csv",
 }

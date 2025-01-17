@@ -1842,6 +1842,20 @@ def metric_weights_model(
     req_cols,
     refresh_config,
 ):
+    """Model data preparation and model training selection and selecting variables from idv_list
+
+    Args:
+        pillar (str): The pillar that we are considering for training
+        brand_name (str): Brand name for the training
+        category_name (str): category of the brand to train
+        modeling_data (DataFrame): Data for the training
+        feat_eng_config (dict): Feature engineering config
+        req_cols (DataFrame): idv data
+        refresh_config (dict): refresh config from configuration_function.py
+
+    Returns:
+        _type_: _description_
+    """
     attr_df1 = modeling_data.copy()
     attr_df1["date"] = pd.to_datetime(attr_df1["date"], format="%Y-%m-%d")
     attr_df1 = attr_df1.sort_values(by="date", ascending=True)

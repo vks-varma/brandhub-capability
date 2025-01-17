@@ -29,9 +29,10 @@
 
 
 from configuration_function import *
-from data_preparation import *
-from modelling import *
-from pre_validation import *
+from data_preparation import data_preparation
+from modelling import modelling
+from post_modelling import post_modelling, scoring
+from pre_validation import pre_validation
 
 # if  True:
 pre_validation(
@@ -43,12 +44,6 @@ pre_validation(
 )
 
 
-# # COMMAND ----------
-
-# # MAGIC %run ./data_preparation
-
-# # COMMAND ----------
-
 data_preparation(
     input_config,
     output_config,
@@ -59,11 +54,6 @@ data_preparation(
     refresh_type,
 )
 
-# COMMAND ----------
-
-# MAGIC %run ./modelling
-
-# COMMAND ----------
 
 # if scoring_refresh_check == False:
 modelling(
@@ -78,20 +68,28 @@ modelling(
 )
 
 
-# # COMMAND ----------
+scoring(
+    input_config,
+    output_config,
+    mapping_config,
+    storage_options,
+    refresh_config,
+    feat_eng_config,
+    filter_config,
+    refresh_type,
+)
 
-# # MAGIC %run ./post_modelling
+post_modelling(
+    input_config,
+    output_config,
+    mapping_config,
+    storage_options,
+    refresh_config,
+    feat_eng_config,
+    filter_config,
+    refresh_type,
+)
 
-# # COMMAND ----------
-
-# scoring(input_config, output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
-
-# post_modelling(input_config,output_config, mapping_config, storage_options, refresh_config, feat_eng_config, filter_config, refresh_type)
-
-
-# # COMMAND ----------
 
 # if post_validation_check:
 #     post_validation(input_config,output_config)
-
-# COMMAND ----------
