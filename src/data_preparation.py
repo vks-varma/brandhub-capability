@@ -306,8 +306,6 @@
 #     modeling_data["date"] = pd.to_datetime(modeling_data["date"], utc=False)
 
 
-
-
 # COMMAND ----------
 
 # def scaled_data_prep(df, category_list, req_cols, brand_category_to_run):
@@ -524,7 +522,16 @@ def cap_values(df, col, min_val, max_val):
 
 # COMMAND ----------
 
-def process_level(df, req_cols, brand_category_to_run, filter_config, level, level_value, parent_level=None):
+
+def process_level(
+    df,
+    req_cols,
+    brand_category_to_run,
+    filter_config,
+    level,
+    level_value,
+    parent_level=None,
+):
     """
     Processes data for a specific level (category or brand).
 
@@ -543,31 +550,48 @@ def process_level(df, req_cols, brand_category_to_run, filter_config, level, lev
     print(f"Processing {level}: {level_value}")
     df["date"] = pd.to_datetime(df["date"])
     # Filter data for the specified level
-    if level == 'category':
+    if level == "category":
         # df_filtered = df[df['category'] == level_value]
         category_ = level_value
-        df_filtered = df[df['category'] == category_]  # subsetting for category
-    elif level == 'brand':
+        df_filtered = df[
+            df["category"] == category_
+        ]  # subsetting for category
+    elif level == "brand":
         # df_filtered = df[(df['category'] == parent_level) & (df['brand_group_expanded'] == level_value)]
         category_ = parent_level
         brand = level_value
-        df_filtered = df[(df['brand_group_expanded'] == brand) & (df['category'] == category_)]  # subsetting for category
+        df_filtered = df[
+            (df["brand_group_expanded"] == brand)
+            & (df["category"] == category_)
+        ]  # subsetting for category
     else:
-        raise ValueError(f"Invalid level: {level}. Expected 'category' or 'brand'.")
+        raise ValueError(
+            f"Invalid level: {level}. Expected 'category' or 'brand'."
+        )
 
-    brand_list = df_filtered['brand_group_expanded'].unique()  # finding the unique brands
-    brands_list = brand_category_to_run[brand_category_to_run['category'] == category_]['brand_group_expanded'].unique()  # obtaining the brands
+    brand_list = df_filtered[
+        "brand_group_expanded"
+    ].unique()  # finding the unique brands
+    brands_list = brand_category_to_run[
+        brand_category_to_run["category"] == category_
+    ][
+        "brand_group_expanded"
+    ].unique()  # obtaining the brands
     category_brands_list = set(brand_list).intersection(brands_list)
     # Taking the entire brand list
-    df_filtered = df_filtered[df_filtered['brand_group_expanded'].isin(category_brands_list)]
+    df_filtered = df_filtered[
+        df_filtered["brand_group_expanded"].isin(category_brands_list)
+    ]
 
     # Extract metadata columns
-    metadata_cols = ['date', 'brand_group_expanded', 'category']
+    metadata_cols = ["date", "brand_group_expanded", "category"]
     metadata = df_filtered[metadata_cols]
 
     # Filter required columns
-    req_cols_level = req_cols[(req_cols['Select'] == 'Y') &
-                                (req_cols['product_category_idv'] == category_)]
+    req_cols_level = req_cols[
+        (req_cols["Select"] == "Y")
+        & (req_cols["product_category_idv"] == category_)
+    ]
 
     # if level == 'brand':
     #     req_cols_level = req_cols[
@@ -580,47 +604,75 @@ def process_level(df, req_cols, brand_category_to_run, filter_config, level, lev
     #         (req_cols['product_category_idv'] == level_value)
     #     ]
 
-
-    df_filtered = df_filtered[df_filtered.columns.intersection(req_cols_level['idv_for_model_corrected'])]
+    df_filtered = df_filtered[
+        df_filtered.columns.intersection(
+            req_cols_level["idv_for_model_corrected"]
+        )
+    ]
 
     # Cap values if configured
-    if filter_config['scaling']['cap_min_max_from_idv_file']:
+    if filter_config["scaling"]["cap_min_max_from_idv_file"]:
         for col in df_filtered.columns:
-            if col in req_cols_level['idv_for_model_corrected'].values:
-                max_value = req_cols_level.loc[req_cols_level['idv_for_model_corrected'] == col, 'max'].unique()[0]
-                min_value = req_cols_level.loc[req_cols_level['idv_for_model_corrected'] == col, 'min'].unique()[0]
-                df_filtered = cap_values(df_filtered, col, min_value, max_value)
+            if col in req_cols_level["idv_for_model_corrected"].values:
+                max_value = req_cols_level.loc[
+                    req_cols_level["idv_for_model_corrected"] == col, "max"
+                ].unique()[0]
+                min_value = req_cols_level.loc[
+                    req_cols_level["idv_for_model_corrected"] == col, "min"
+                ].unique()[0]
+                df_filtered = cap_values(
+                    df_filtered, col, min_value, max_value
+                )
 
     # Handle null values
-    high_null_threshold = 0.9 if parent_level in filter_config["high_null_count_categories"] else 0.5
-    df_filtered = df_filtered.dropna(axis=1, thresh=int(len(df_filtered) * (1 - high_null_threshold)))  # Remove high-null columns
+    high_null_threshold = (
+        0.9
+        if parent_level in filter_config["high_null_count_categories"]
+        else 0.5
+    )
+    df_filtered = df_filtered.dropna(
+        axis=1, thresh=int(len(df_filtered) * (1 - high_null_threshold))
+    )  # Remove high-null columns
     df_filtered = df_filtered.fillna(df_filtered.mean())  # Fill partial nulls
 
     # Scale data
-    if filter_config["scaling"]['transform_using_min_max_scaler']:
+    if filter_config["scaling"]["transform_using_min_max_scaler"]:
         scaler = MinMaxScaler()
-        df_scaled = pd.DataFrame(scaler.fit_transform(df_filtered), columns=df_filtered.columns)
-    elif filter_config["scaling"]['custom_min_max']:
+        df_scaled = pd.DataFrame(
+            scaler.fit_transform(df_filtered), columns=df_filtered.columns
+        )
+    elif filter_config["scaling"]["custom_min_max"]:
         df_scaled = df_filtered.copy()
         for col in df_filtered.columns:
-            max_value = req_cols_level.loc[req_cols_level['idv_for_model_corrected'] == col, 'max'].unique()[0]
-            min_value = req_cols_level.loc[req_cols_level['idv_for_model_corrected'] == col, 'min'].unique()[0]
-            df_scaled[col] = (df_scaled[col] - min_value) / (max_value - min_value)
-    elif filter_config["scaling"]['transform_using_standard_scaler']:
+            max_value = req_cols_level.loc[
+                req_cols_level["idv_for_model_corrected"] == col, "max"
+            ].unique()[0]
+            min_value = req_cols_level.loc[
+                req_cols_level["idv_for_model_corrected"] == col, "min"
+            ].unique()[0]
+            df_scaled[col] = (df_scaled[col] - min_value) / (
+                max_value - min_value
+            )
+    elif filter_config["scaling"]["transform_using_standard_scaler"]:
         scaler = StandardScaler()
-        df_scaled = pd.DataFrame(scaler.fit_transform(df_filtered), columns=df_filtered.columns)
+        df_scaled = pd.DataFrame(
+            scaler.fit_transform(df_filtered), columns=df_filtered.columns
+        )
 
     # Add metadata columns
-    df_scaled['Brand'] = brand if level == 'brand' else  metadata['brand_group_expanded']
-    df_scaled['New_Brand'] = brand if level == 'brand' else "Stacked Brand"
-    df_scaled['Category'] = category_
-    df_scaled['date'] = metadata['date']
+    df_scaled["Brand"] = (
+        brand if level == "brand" else metadata["brand_group_expanded"]
+    )
+    df_scaled["New_Brand"] = brand if level == "brand" else "Stacked Brand"
+    df_scaled["Category"] = category_
+    df_scaled["date"] = metadata["date"]
 
     return df_scaled
 
     # except Exception as e:
     #     print(f"Error processing {level} {level_value}: {e}")
-        # return pd.DataFrame()  # Return an empty DataFrame on error
+    # return pd.DataFrame()  # Return an empty DataFrame on error
+
 
 # COMMAND ----------
 
@@ -647,48 +699,102 @@ def process_level(df, req_cols, brand_category_to_run, filter_config, level, lev
 
 # COMMAND ----------
 
-def dv_data_prep(equity_dt, eq_sub_scale_merged_brand_copy, refresh_config):
-    if refresh_config['dv'] == "market_share":
-        dv = 'market_share_total_sales'
-    else:
-        dv = refresh_config['dv']
 
-    dv_data = equity_dt[['date', 'brand_group_expanded', 'category', dv]].copy()
+def dv_data_prep(equity_dt, eq_sub_scale_merged_brand_copy, refresh_config):
+    """Adding Dependent variable to the scaled data for modeling
+
+    Args:
+        equity_dt (DataFrame): Data that contains dependent variable
+        eq_sub_scale_merged_brand_copy (DataFrame): Scaled data generated in data preparation
+        refresh_config (dict): Config containing details about the refresh type
+
+    Returns:
+        Dataframe: Data with combined scaled and dv varible
+    """
+    if refresh_config["dv"] == "market_share":
+        dv = "market_share_total_sales"
+    else:
+        dv = refresh_config["dv"]
+
+    dv_data = equity_dt[
+        ["date", "brand_group_expanded", "category", dv]
+    ].copy()
     # Rename multiple columns for old to new
-    dv_data.rename(columns={'brand_group_expanded': 'brand', 'category': 'category', 'market_share_total_sales': 'market_share'}, inplace=True)
-    eq_sub_scale_merged_brand_copy['date'] = pd.to_datetime(eq_sub_scale_merged_brand_copy['date'], format="%Y-%m-%d", utc=False)
-    dv_data['date'] = pd.to_datetime(dv_data['date'], format="%Y-%m-%d")
-    eq_sub_scale_merged_brand_copy['date'] = eq_sub_scale_merged_brand_copy['date'].astype(str)
-    dv_data['date'] = dv_data['date'].astype(str)
-    eq_sub_scale_merged_brand_copy.columns = map(str.lower, eq_sub_scale_merged_brand_copy.columns)
-    index_df_final1 = pd.merge(eq_sub_scale_merged_brand_copy, dv_data, on=['date', 'brand', 'category'], how='left')
+    dv_data.rename(
+        columns={
+            "brand_group_expanded": "brand",
+            "category": "category",
+            "market_share_total_sales": "market_share",
+        },
+        inplace=True,
+    )
+    eq_sub_scale_merged_brand_copy["date"] = pd.to_datetime(
+        eq_sub_scale_merged_brand_copy["date"], format="%Y-%m-%d", utc=False
+    )
+    dv_data["date"] = pd.to_datetime(dv_data["date"], format="%Y-%m-%d")
+    eq_sub_scale_merged_brand_copy["date"] = eq_sub_scale_merged_brand_copy[
+        "date"
+    ].astype(str)
+    dv_data["date"] = dv_data["date"].astype(str)
+    eq_sub_scale_merged_brand_copy.columns = map(
+        str.lower, eq_sub_scale_merged_brand_copy.columns
+    )
+    index_df_final1 = pd.merge(
+        eq_sub_scale_merged_brand_copy,
+        dv_data,
+        on=["date", "brand", "category"],
+        how="left",
+    )
     return index_df_final1
 
+
 # COMMAND ----------
+
 
 def filtering_idv_list(df):
-    df['idv_for_model_corrected'] = df['idv_for_model_corrected'].str.lower()
-    df1 = df[df['Select'] == 'Y']
-    df_ = df1['idv_for_model_corrected']
-    df_ = ["brand_group_expanded", "category","date"] + list(df_.unique())
+    """Filtering idv list to identify the varibles need for data processing
+
+    Args:
+        df (DataFrame): idv_list that contains the information of neccessary variables and its details
+
+    Returns:
+        List: list containing the varibles needed for data processing from the harmonized data
+    """
+    df["idv_for_model_corrected"] = df["idv_for_model_corrected"].str.lower()
+    df1 = df[df["Select"] == "Y"]
+    df_ = df1["idv_for_model_corrected"]
+    df_ = ["brand_group_expanded", "category", "date"] + list(df_.unique())
     return df_
+
 
 # COMMAND ----------
 
+
 def filter_by_date_range(df, start_date, end_date):
-    df['date'] = pd.to_datetime(df['date'], utc=False)
+    """Filtering date range for the data processing and further analysis
+
+    Args:
+        df (DataFrame): Harmonized_processed_data to filter out the date range
+        start_date (str): Start date configured in the configuration file
+        end_date (str): End date configured in the configuration file
+
+    Returns:
+        DataFrame: Data with filtered date range
+    """
+    df["date"] = pd.to_datetime(df["date"], utc=False)
 
     # Print the minimum and maximum date values for verification
-    print("Minimum date:", df['date'].min(skipna=True))
-    print("Maximum date:", df['date'].max(skipna=True))
+    print("Minimum date:", df["date"].min(skipna=True))
+    print("Maximum date:", df["date"].max(skipna=True))
 
     # Define the date range from run_config
-    date1 = pd.to_datetime(start_date, format='%Y-%m-%d')
-    date2 = pd.to_datetime(end_date, format='%Y-%m-%d')
+    date1 = pd.to_datetime(start_date, format="%Y-%m-%d")
+    date2 = pd.to_datetime(end_date, format="%Y-%m-%d")
 
     # Filter the DataFrame based on the date range
-    df = df[(df['date'] >= date1) & (df['date'] <= date2)]
+    df = df[(df["date"] >= date1) & (df["date"] <= date2)]
     return df
+
 
 # COMMAND ----------
 
@@ -721,55 +827,123 @@ def filter_by_date_range(df, start_date, end_date):
 
 # COMMAND ----------
 
-#v2
-def data_preparation(input_config,output_config,mapping_config,refresh_config,filter_config,storage_options, refresh_type):
 
-    equity_dt = pd.read_csv(output_config["processed_input_data"], storage_options= storage_options )
+# v2
+def data_preparation(
+    input_config,
+    output_config,
+    mapping_config,
+    refresh_config,
+    filter_config,
+    storage_options,
+    refresh_type,
+):
+    """Main function that integrates the enitre data preprocessing that reads data from
+    corresponding paths mentioned in the input_config and saving the output data to the respective
+    mentioned paths in the output_config
+
+    Args:
+        input_config (dict): Dictionary containing details of the path of input files
+        output_config (dict): Dictionary containing details of the path of output files
+        mapping_config (dict): Dictionary containing details of the path of mapping files
+        refresh_config (dict): Dictionary containing details of refresh type
+        filter_config (dict): Dictionary containing details of required filters for the data preprocessing
+        storage_options (dict): Dictionary containing details of storage options for databricks else None
+        refresh_type (str): refresh type for the data
+    """
+
+    equity_dt = pd.read_csv(
+        output_config["processed_input_data"], storage_options=storage_options
+    )
     equity_dt["date"] = pd.to_datetime(equity_dt["date"], utc=False)
-    req_cols = pd.read_csv(mapping_config["idv_list"], storage_options=storage_options)
+    req_cols = pd.read_csv(
+        mapping_config["idv_list"], storage_options=storage_options
+    )
 
-    brand_category_to_run = pd.read_csv(mapping_config["brand_list"], storage_options=storage_options)
+    brand_category_to_run = pd.read_csv(
+        mapping_config["brand_list"], storage_options=storage_options
+    )
 
-    dashboard_metric_names_mapping = pd.read_excel(mapping_config["dashboard_metric_names_mapping"], storage_options=storage_options)
+    # dashboard_metric_names_mapping = pd.read_excel(mapping_config["dashboard_metric_names_mapping"], storage_options=storage_options)
 
-    equity_dt = filter_by_date_range(equity_dt,refresh_config["start_date"],refresh_config["end_date"])
+    equity_dt = filter_by_date_range(
+        equity_dt, refresh_config["start_date"], refresh_config["end_date"]
+    )
 
     # Normalize column names to lowercase
     equity_dt.columns = equity_dt.columns.str.lower()
 
-    category_list = req_cols['product_category_idv'].unique()
+    category_list = req_cols["product_category_idv"].unique()
     # eq_sub_scale_merged_brand = scaled_data_prep(equity_dt, category_list, req_cols, brand_category_to_run, filter_config)
     eq_sub_scale_merged = pd.DataFrame()
     eq_sub_scale_merged_brand = pd.DataFrame()
     for category_ in category_list:
         # Process category level
-        eq_sub_scaled_stack = process_level(equity_dt, req_cols,brand_category_to_run, filter_config, level='category', level_value=category_)
+        eq_sub_scaled_stack = process_level(
+            equity_dt,
+            req_cols,
+            brand_category_to_run,
+            filter_config,
+            level="category",
+            level_value=category_,
+        )
         # eq_sub_scale_merged_brand = pd.concat([eq_sub_scale_merged_brand, eq_sub_scaled_stack], ignore_index=True)
 
         # Get brands within the category
-        equity_dt_b = equity_dt[equity_dt['category'] == category_]
-        req_cols1 = req_cols[(req_cols['Select'] == 'Y') & (req_cols['product_category_idv'] == category_)]
-        brand_list = equity_dt_b['brand_group_expanded'].unique()  # finding the unique brands
-        brands_list = brand_category_to_run[brand_category_to_run['category'] == category_]['brand_group_expanded'].unique()
+        equity_dt_b = equity_dt[equity_dt["category"] == category_]
+        req_cols1 = req_cols[
+            (req_cols["Select"] == "Y")
+            & (req_cols["product_category_idv"] == category_)
+        ]
+        brand_list = equity_dt_b[
+            "brand_group_expanded"
+        ].unique()  # finding the unique brands
+        brands_list = brand_category_to_run[
+            brand_category_to_run["category"] == category_
+        ]["brand_group_expanded"].unique()
         category_brands_list = set(brand_list).intersection(brands_list)
         eq_sub_scale_all_brand = pd.DataFrame()
         for brand in category_brands_list:
             # Process brand level
             eq_brand_scaled = pd.DataFrame()
-            eq_brand_scaled = process_level(equity_dt, req_cols1, brand_category_to_run, filter_config, level='brand', level_value=brand, parent_level=category_)
-            eq_sub_scale_merged_brand = pd.concat([eq_sub_scale_merged_brand, eq_brand_scaled], ignore_index=True)
+            eq_brand_scaled = process_level(
+                equity_dt,
+                req_cols1,
+                brand_category_to_run,
+                filter_config,
+                level="brand",
+                level_value=brand,
+                parent_level=category_,
+            )
+            eq_sub_scale_merged_brand = pd.concat(
+                [eq_sub_scale_merged_brand, eq_brand_scaled], ignore_index=True
+            )
         # eq_sub_scale_merged = pd.concat([eq_sub_scale_merged,eq_sub_scale_all_brand,eq_sub_scaled_stack], ignore_index=True)
 
-        eq_sub_scale_merged_brand = pd.concat([eq_sub_scale_merged_brand,eq_sub_scaled_stack])
+        eq_sub_scale_merged_brand = pd.concat(
+            [eq_sub_scale_merged_brand, eq_sub_scaled_stack]
+        )
 
     eq_sub_scale_merged_brand_copy = eq_sub_scale_merged_brand.copy()
-    modeling_data = dv_data_prep(equity_dt, eq_sub_scale_merged_brand_copy, refresh_config)
+    modeling_data = dv_data_prep(
+        equity_dt, eq_sub_scale_merged_brand_copy, refresh_config
+    )
 
-    equity_dt.to_csv(output_config["data_prep"]["equity_dt"], index=False, storage_options=storage_options)
-    eq_sub_scale_merged_brand_copy.to_csv(output_config["data_prep"]["eq_sub_scale"], index=False, storage_options=storage_options)
-    modeling_data.to_csv(output_config["data_prep"]["modeling_data"], index=False, storage_options=storage_options)
+    equity_dt.to_csv(
+        output_config["data_prep"]["equity_dt"],
+        index=False,
+        storage_options=storage_options,
+    )
+    eq_sub_scale_merged_brand_copy.to_csv(
+        output_config["data_prep"]["eq_sub_scale"],
+        index=False,
+        storage_options=storage_options,
+    )
+    modeling_data.to_csv(
+        output_config["data_prep"]["modeling_data"],
+        index=False,
+        storage_options=storage_options,
+    )
 
 
 # COMMAND ----------
-
-

@@ -61,9 +61,12 @@ import xgboost as xgb
 from matplotlib import pyplot
 
 # R and Python integration
-# from rpy2 import robjects
-# from rpy2.robjects import pandas2ri
-# from rpy2.robjects.packages import importr
+os.environ["R_HOME"] = (
+    r"C:\\Users\\cilvo.simon\\AppData\\Local\\Programs\\R\\R-4.4.2\\"
+)
+from rpy2 import robjects
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.packages import importr
 from scipy import stats
 from sklearn import metrics
 from sklearn.decomposition import PCA
@@ -97,9 +100,6 @@ from statsmodels.tsa.stattools import adfuller
 # import adal
 
 
-
-
-
 # # Visualization and interactive tools
 # import ipywidgets as widgets
 # from IPython.display import display
@@ -119,14 +119,16 @@ from statsmodels.tsa.stattools import adfuller
 # from pyspark.sql.window import Window
 
 
-
 print("All required libraries are installed.")
 
 
 # COMMAND ----------
 
-#authentication function
-def Adlsg2_authentication(account_name,kv_name,client_secret,client_id, tenant_id):
+
+# authentication function
+def Adlsg2_authentication(
+    account_name, kv_name, client_secret, client_id, tenant_id
+):
     """
     Authenticate Azure Data Lake Storage with service priciple to read and write data
     :param account_name azure storage account name
@@ -138,8 +140,33 @@ def Adlsg2_authentication(account_name,kv_name,client_secret,client_id, tenant_i
     :returns
     None
     """
-    spark.conf.set("fs.azure.account.auth.type.{}.dfs.core.windows.net".format(account_name), "OAuth")
-    spark.conf.set("fs.azure.account.oauth.provider.type.{}.dfs.core.windows.net".format(account_name), "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
-    spark.conf.set("fs.azure.account.oauth2.client.id.{}.dfs.core.windows.net".format(account_name), client_id)
-    spark.conf.set("fs.azure.account.oauth2.client.secret.{}.dfs.core.windows.net".format(account_name), client_secret)
-    spark.conf.set("fs.azure.account.oauth2.client.endpoint.{}.dfs.core.windows.net".format(account_name), "https://login.microsoftonline.com/{}/oauth2/token".format(tenant_id))
+    spark.conf.set(
+        "fs.azure.account.auth.type.{}.dfs.core.windows.net".format(
+            account_name
+        ),
+        "OAuth",
+    )
+    spark.conf.set(
+        "fs.azure.account.oauth.provider.type.{}.dfs.core.windows.net".format(
+            account_name
+        ),
+        "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider",
+    )
+    spark.conf.set(
+        "fs.azure.account.oauth2.client.id.{}.dfs.core.windows.net".format(
+            account_name
+        ),
+        client_id,
+    )
+    spark.conf.set(
+        "fs.azure.account.oauth2.client.secret.{}.dfs.core.windows.net".format(
+            account_name
+        ),
+        client_secret,
+    )
+    spark.conf.set(
+        "fs.azure.account.oauth2.client.endpoint.{}.dfs.core.windows.net".format(
+            account_name
+        ),
+        "https://login.microsoftonline.com/{}/oauth2/token".format(tenant_id),
+    )
