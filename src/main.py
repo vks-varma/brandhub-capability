@@ -34,41 +34,9 @@ from modelling import modelling
 from post_modelling import post_modelling, scoring
 from pre_validation import pre_validation
 
+
 # if  True:
-pre_validation(
-    input_config,
-    output_config,
-    mapping_config,
-    refresh_config,
-    storage_options,
-)
-
-
-data_preparation(
-    input_config,
-    output_config,
-    mapping_config,
-    refresh_config,
-    filter_config,
-    storage_options,
-    refresh_type,
-)
-
-
-# if scoring_refresh_check == False:
-modelling(
-    input_config,
-    output_config,
-    mapping_config,
-    refresh_config,
-    feat_eng_config,
-    filter_config,
-    storage_options,
-    refresh_type,
-)
-
-
-scoring(
+def main(
     input_config,
     output_config,
     mapping_config,
@@ -77,19 +45,68 @@ scoring(
     feat_eng_config,
     filter_config,
     refresh_type,
-)
+):
+    pre_validation(
+        input_config,
+        output_config,
+        mapping_config,
+        refresh_config,
+        storage_options,
+    )
 
-post_modelling(
-    input_config,
-    output_config,
-    mapping_config,
-    storage_options,
-    refresh_config,
-    feat_eng_config,
-    filter_config,
-    refresh_type,
-)
+    data_preparation(
+        input_config,
+        output_config,
+        mapping_config,
+        refresh_config,
+        filter_config,
+        storage_options,
+        refresh_type,
+    )
+
+    # if scoring_refresh_check == False:
+    modelling(
+        input_config,
+        output_config,
+        mapping_config,
+        refresh_config,
+        feat_eng_config,
+        filter_config,
+        storage_options,
+        refresh_type,
+    )
+
+    scoring(
+        input_config,
+        output_config,
+        mapping_config,
+        storage_options,
+        refresh_config,
+        feat_eng_config,
+        filter_config,
+        refresh_type,
+    )
+
+    post_modelling(
+        input_config,
+        output_config,
+        mapping_config,
+        storage_options,
+        refresh_config,
+        feat_eng_config,
+        filter_config,
+        refresh_type,
+    )
 
 
-# if post_validation_check:
-#     post_validation(input_config,output_config)
+if __name__ == "__main__":
+    main(
+        input_config,
+        output_config,
+        mapping_config,
+        storage_options,
+        refresh_config,
+        feat_eng_config,
+        filter_config,
+        refresh_type,
+    )
