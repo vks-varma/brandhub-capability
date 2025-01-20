@@ -32,7 +32,7 @@ from configuration_function import *
 from data_preparation import data_preparation
 from modelling import modelling
 from post_modelling import post_modelling, scoring
-from pre_validation import pre_validation
+from pre_validation import data_preformatting
 
 
 # if  True:
@@ -46,7 +46,7 @@ def main(
     filter_config,
     refresh_type,
 ):
-    pre_validation(
+    data_preformatting(
         input_config,
         output_config,
         mapping_config,
