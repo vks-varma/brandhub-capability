@@ -230,9 +230,9 @@ refresh_config = {
 # COMMAND ----------
 
 input_config = {
-    "current_sales_data": f"{directory_config['current_staging_dir']}raw_input_data/rms_tenten_monthly_19_9_24_blue.csv",
+    "current_sales_data": f"{directory_config['current_staging_dir']}raw_input_data/nielsen_rms_data.csv",
     "prev_sales_data": f"{directory_config['prev_staging_dir']}raw_input_data/nielsen_rms_data.csv",
-    "current_harmonized_data": f"{directory_config['current_staging_dir']}raw_input_data/harmonized_data_rms_tenten_blue_19_9_24_monthly.csv",
+    "current_harmonized_data": f"{directory_config['current_staging_dir']}raw_input_data/harmonized_raw_data.csv",
     "prev_harmonized_data": f"{directory_config['prev_staging_dir']}processed_input_data/harmonized_data_processed.csv",
 }
 
