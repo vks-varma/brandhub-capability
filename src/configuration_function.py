@@ -143,14 +143,15 @@ else:
     storage_options = None
     sql_options = None
 
-apps_dir = "apps/cmi_brand_hub/"
-staging_dir = "staging/cmi_brand_hub/"
-solution_dir = "solution/cmi_brand_hub/"
+apps_dir = "data/"
+staging_dir = "data/"
+solution_dir = "data/"
 
 # COMMAND ----------
 
 directory_config = {
-    "support_dir": f"{main_dir}{apps_dir}{'brand_health_scorecard_mapping/'}",
+    "support_dir": f"{main_dir}{apps_dir}{'mapping_input/'}",
+    # NOTE:Ignore pre and post validation variables
     "prev_staging_dir": f"{main_dir}{staging_dir}{dv_folder}/{prev_date}/",
     "current_staging_dir": f"{main_dir}{staging_dir}{dv_folder}/{current_date}/",
 }
@@ -230,9 +231,10 @@ refresh_config = {
 # COMMAND ----------
 
 input_config = {
-    "current_sales_data": f"{directory_config['current_staging_dir']}raw_input_data/nielsen_rms_data.csv",
+    "current_sales_data": f"{directory_config['support_dir']}nielsen_rms_data.csv",
+    "current_harmonized_data": f"{directory_config['support_dir']}harmonized_raw_data.csv",
+    # NOTE: Ignoring pre and post validation related variables
     "prev_sales_data": f"{directory_config['prev_staging_dir']}raw_input_data/nielsen_rms_data.csv",
-    "current_harmonized_data": f"{directory_config['current_staging_dir']}raw_input_data/harmonized_raw_data.csv",
     "prev_harmonized_data": f"{directory_config['prev_staging_dir']}processed_input_data/harmonized_data_processed.csv",
 }
 

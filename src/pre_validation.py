@@ -1233,7 +1233,7 @@ def harmonized_data_prep(
 # COMMAND ----------
 
 
-def pre_validation(
+def data_preformatting(
     input_config,
     output_config,
     mapping_config,
