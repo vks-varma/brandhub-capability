@@ -120,7 +120,7 @@ current_date = datetime.now().replace(day=1).strftime("%Y-%m-%d")
 prev_date = "2024-11-01"
 dv_folder = "scorecard_refresh"
 
-time_granularity = "monthly"
+time_granularity = "weekly"
 group_vars = ["vendor", "brand_group_expanded", "category", "date"]
 
 
@@ -193,8 +193,8 @@ refresh_config = {
     "time_granularity": time_granularity,
     "platform": platform_type,
     "sql_options": sql_options,
-    "start_date": "2019-09-01",
-    "end_date": "2023-12-30",
+    "start_date": "2022-01-01",
+    "end_date": "2024-09-30",
     "run_importance_model_for_scoring_refresh": False,
     "pillars": {
         "all_category_pillars": [

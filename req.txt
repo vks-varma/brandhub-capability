@@ -17,3 +17,4 @@ seaborn==0.13.2
 shap==0.46.0
 scipy==1.15.1
 statsmodels==0.14.4
+semopy==2.3.11

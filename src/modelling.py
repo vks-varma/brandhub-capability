@@ -1185,8 +1185,307 @@
 # MAGIC %md
 # MAGIC after cleaning(v3)
 
+import semopy as sp
+from semopy import Model
+
 # COMMAND ----------
 from library_installation import *
+
+
+def cfa_py(fa_str, scaled_data, seed):
+
+    model = Model(fa_str, cov_diag=False)
+    model.fit(scaled_data, solver="L-BFGS-B")  # , estimator="GLS")
+
+    #         # Retrieve the fit indices using a common method
+    #     try:
+    #         fit_indices = model.results['fit']
+    #     except KeyError:
+    #         # Try other common methods if 'fit' is not available
+    #         fit_indices = model.results
+
+    # Retrieve fit statistics (method may vary)
+    stats = sp.calc_stats(model)
+    cfi = stats["CFI"]
+    tli = stats["TLI"]
+    rmsea = stats["RMSEA"]
+    #     print("cfi,tli,rmsea,stats:",stats['CFI']['Value'].values)
+    try:
+        fit_indices = model.fit_stats()
+    except AttributeError:
+        # If fit_stats() is not available, check other attributes
+        fit_indices = (
+            model.statistics_ if hasattr(model, "statistics_") else {}
+        )
+
+    #     fit_indices = sp.get_fit_indices(model)
+    #     fit_indices = model.calc_stats()
+    #     fit_indices = inspect(model, 'all')
+    #     fit_indices = model.statistics_
+    cfa_fit_indices = pd.DataFrame(
+        fit_indices.items(), columns=["fitmeasure", "value"]
+    )
+    cfa_fit_indices = cfa_fit_indices[
+        cfa_fit_indices["fitmeasure"].isin(["cfi", "tli", "rmsea"])
+    ]
+    cfa_fit_indices["value"] = cfa_fit_indices["value"].astype(float)
+
+    cfa_fit_indices_t = cfa_fit_indices.set_index("fitmeasure").T
+
+    # Extract parameter estimates
+    cfa_estimates = model.inspect()
+
+    # CFA summary table
+    cfa_summary = pd.concat([cfa_estimates, cfa_fit_indices_t], axis=1)
+
+    # Store the results
+    cfa_summary["factor_str"] = fa_str
+    cfa_summary["Seed"] = seed
+    cfa_summary["cfi"] = stats.loc["Value"]["CFI"]
+    cfa_summary["tli"] = stats.loc["Value"]["TLI"]
+    cfa_summary["rmsea"] = stats.loc["Value"]["RMSEA"]
+    cfa_summary = cfa_summary.rename(
+        columns={
+            "lval": "rhs",
+            "rval": "lhs",
+            "Estimate": "est.std",
+            "Std. Err": "se",
+            "z-value": "z",
+            "p-value": "pvalue",
+        }
+    )
+    cfa_summary["op"].replace("~", "=~", inplace=True)
+    return cfa_summary
+
+
+def perform_cfa_analysis(
+    output_config,
+    refresh_config,
+    feat_eng_config,
+    eq_sub_scale_merged_brand,
+    req_cols,
+    storage_options,
+    refresh_type,
+):
+    # Initialize variables
+    category_list_pillar = eq_sub_scale_merged_brand["category"].unique()
+    sample_seeds = [2, 3, 5, 7, 11, 13, 17, 19]
+
+    # Selecting required columns for all categories
+    eq_sub_scale_merged_all_category_filtered_base = eq_sub_scale_merged_brand[
+        eq_sub_scale_merged_brand["new_brand"] == "Stacked Brand"
+    ]
+    req_cols_all_cat = req_cols[req_cols["Select"] == "Y"]
+    ind_factor_list_all_cat = req_cols_all_cat["Equity Pillar"].unique()
+
+    # Generate samples based on seeds
+    eq_sub_scale_merged_all_category_filtered_list = []
+    for seed in sample_seeds:
+        np.random.seed(seed)
+        sample_size = int(
+            0.95 * eq_sub_scale_merged_all_category_filtered_base.shape[0]
+        )
+        sampled_data = eq_sub_scale_merged_all_category_filtered_base.sample(
+            n=sample_size
+        )
+        eq_sub_scale_merged_all_category_filtered_list.append(sampled_data)
+
+    # Process each sample
+    fit_summary_all_cat = pd.DataFrame()
+    corr_pillar_ = pd.DataFrame()
+
+    for seed_idx, seed in enumerate(sample_seeds):
+        print(f"Processing seed: {seed}")
+
+        if seed_idx < len(eq_sub_scale_merged_all_category_filtered_list):
+            filtered_data = eq_sub_scale_merged_all_category_filtered_list[
+                seed_idx
+            ]
+        else:
+            print("Index out of range")
+            continue
+
+        # Handle missing values
+        filtered_data = filtered_data.apply(
+            lambda x: (
+                x.fillna(x.mean()) if np.issubdtype(x.dtype, np.number) else x
+            )
+        )
+
+        # Process each pillar
+        all_cat_pillars_list = [
+            re.sub("_pillar", "", p)
+            for p in refresh_config["pillars"]["all_category_pillars"]
+        ]
+
+        for pillar in all_cat_pillars_list:
+            print(f"Processing pillar: {pillar}")
+
+            # Metrics for the current pillar
+            pillar_metrics = req_cols_all_cat[
+                req_cols_all_cat["Equity Pillar"] == pillar
+            ]["idv_for_model_corrected"].unique()
+            available_metrics = [
+                metric
+                for metric in pillar_metrics
+                if metric in filtered_data.columns
+            ]
+
+            if not available_metrics:
+                print(f"No available metrics for pillar: {pillar}")
+                continue
+
+            # Factor structure
+            factor_str = f"{pillar}_pillar =~ " + " + ".join(available_metrics)
+
+            # Correlation matrix
+            corr_pillar = (
+                filtered_data[available_metrics].corr().stack().reset_index()
+            )
+            corr_pillar.columns = ["Metric1", "Metric2", "Correlation"]
+            corr_pillar["Pillar"] = pillar
+            corr_pillar_ = pd.concat(
+                [corr_pillar_, corr_pillar], ignore_index=True
+            )
+
+            # Perform CFA (assuming `cfa` is a defined function)
+            try:
+                fit_summary = cfa_py(factor_str, filtered_data, seed)
+                fit_summary["Brands"] = "Stacked Brand"
+                fit_summary["Category"] = "ALL CATEGORY"
+                fit_summary_all_cat = pd.concat(
+                    [fit_summary_all_cat, fit_summary], ignore_index=True
+                )
+            except Exception as e:
+                print(f"Error performing CFA for pillar {pillar}: {e}")
+
+    # Process data by category
+    fit_summary_all_brands = pd.DataFrame()
+    corr_pillar_all_brands = pd.DataFrame()
+
+    for category in category_list_pillar:
+        print(f"Processing category: {category}")
+
+        # Filter data and required columns for the category
+        req_cols_category = req_cols[
+            (req_cols["Select"] == "Y")
+            & (req_cols["product_category_idv"] == category)
+        ]
+        category_data = eq_sub_scale_merged_brand[
+            eq_sub_scale_merged_brand["category"] == category
+        ]
+
+        for brand in ["Stacked Brand"]:
+            print(f"Processing brand: {brand}")
+
+            brand_data = category_data[category_data["new_brand"] == brand]
+
+            # Drop columns with complete null values
+            brand_data = brand_data.dropna(axis=1, how="all")
+
+            # Handle missing values
+            brand_data = brand_data.apply(
+                lambda x: (
+                    x.fillna(x.mean())
+                    if np.issubdtype(x.dtype, np.number)
+                    else x
+                )
+            )
+
+            # Generate samples for the category and brand
+            brand_samples = []
+            for seed in sample_seeds:
+                np.random.seed(seed)
+                brand_samples.append(brand_data.sample(frac=0.95))
+
+            for seed_idx, seed in enumerate(sample_seeds):
+                print(f"Seed: {seed}")
+                if seed_idx >= len(brand_samples):
+                    print("Index out of range")
+                    continue
+
+                sample_data = brand_samples[seed_idx]
+
+                # Process each pillar for the category
+                by_cat_pillars_list = [
+                    x.replace("_pillar", "")
+                    for x in refresh_config["pillars"]["by_category_pillars"]
+                ]
+
+                for pillar in by_cat_pillars_list:
+                    print(f"Processing pillar: {pillar}")
+
+                    # Metrics for the pillar
+                    pillar_metrics = req_cols_category[
+                        (req_cols_category["Equity Pillar"] == pillar)
+                        & (
+                            req_cols_category["product_category_idv"].isin(
+                                [category, "All"]
+                            )
+                        )
+                    ]["idv_for_model_corrected"].unique()
+                    available_metrics = [
+                        metric
+                        for metric in pillar_metrics
+                        if metric in sample_data.columns
+                    ]
+
+                    if not available_metrics:
+                        print(f"No available metrics for pillar: {pillar}")
+                        continue
+
+                    # Factor structure
+                    factor_str = f"{pillar}_pillar =~ " + " + ".join(
+                        available_metrics
+                    )
+
+                    # Correlation matrix
+                    corr_pillar = (
+                        sample_data[available_metrics]
+                        .corr()
+                        .stack()
+                        .reset_index()
+                    )
+                    corr_pillar.columns = ["Metric1", "Metric2", "Correlation"]
+                    corr_pillar["Pillar"] = pillar
+                    corr_pillar_all_brands = pd.concat(
+                        [corr_pillar_all_brands, corr_pillar],
+                        ignore_index=True,
+                    )
+
+                    # Perform CFA (assuming `cfa` is a defined function)
+                    try:
+                        fit_summary = cfa_py(factor_str, sample_data, seed)
+                        fit_summary["Brands"] = brand
+                        fit_summary["Category"] = category
+                        fit_summary_all_brands = pd.concat(
+                            [fit_summary_all_brands, fit_summary],
+                            ignore_index=True,
+                        )
+                    except Exception as e:
+                        print(
+                            f"Error performing CFA for pillar {pillar}, brand {brand}, category {category}: {e}"
+                        )
+    columns_arrangement = [
+        "lhs",
+        "op",
+        "rhs",
+        "est.std",
+        "se",
+        "z",
+        "pvalue",
+        "cfi",
+        "tli",
+        "rmsea",
+        "factor_str",
+        "Seed",
+        "Brands",
+        "Category",
+    ]
+
+    fit_summary_all_cat = fit_summary_all_cat[columns_arrangement]
+    fit_summary_all_brands = fit_summary_all_brands[columns_arrangement]
+    return fit_summary_all_cat, fit_summary_all_brands
 
 
 def cfa(
@@ -2433,16 +2732,34 @@ def modelling(
         .to_dict()
     )
     # cfa (need to bring loops outside)
-    fit_summary_all_cat_py, fit_summary_all_brands_py = cfa(
+    fit_summary_all_cat_py, fit_summary_all_brands_py = perform_cfa_analysis(
         output_config,
         refresh_config,
         feat_eng_config,
-        eq_sub_scale_merged_brand,
+        modeling_data,
         req_cols,
         storage_options,
         refresh_type,
     )
-
+    # fit_summary_all_cat_r, fit_summary_all_brands_r = cfa(
+    #     output_config,
+    #     refresh_config,
+    #     feat_eng_config,
+    #     eq_sub_scale_merged_brand,
+    #     req_cols,
+    #     storage_options,
+    #     refresh_type,
+    # )
+    # fit_summary_all_cat_r.to_csv(
+    #     r"D:\BRAND_HUB_PROJECT\brandhub-capability\data\scorecard_refresh\2025-01-01\cfa\cfa_fit_summary_all_brand_r.csv",
+    #     index=False,
+    #     storage_options=storage_options,
+    # )
+    # fit_summary_all_brands_r.to_csv(
+    #     r"D:\BRAND_HUB_PROJECT\brandhub-capability\data\scorecard_refresh\2025-01-01\cfa\cfa_fit_summary_all_cat_r.csv",
+    #     index=False,
+    #     storage_options=storage_options,
+    # )
     fit_summary_all_cat_py.to_csv(
         output_config["cfa"]["model_results_all_category"],
         index=False,
