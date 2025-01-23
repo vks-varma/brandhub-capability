@@ -1,0 +1,23 @@
+############################################################
+#################### Data Preparation ######################
+############################################################
+
+input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\harmonized_rms_input_data.csv"
+idv_list: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\idv_list_.csv"
+
+granularity: 'weekly' #weekly or monthly
+
+data_prep_group_var:
+  - "brand"
+  - "category"
+
+date_column: "date"
+date_format: "%d-%m-%Y"
+start_date: "2022-01-01"
+end_date: "2024-06-01"
+
+dv_column: "market_share"
+
+null_percentage: 0.5
+
+scaling: "custom"
