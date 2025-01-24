@@ -2,7 +2,7 @@
 #################### Data Preparation ######################
 ############################################################
 
-input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\harmonized_rms_input_data.csv"
+input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\input_data_refined_4.csv"
 idv_list: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\idv_list_.csv"
 
 granularity: 'weekly' #weekly or monthly
@@ -13,7 +13,7 @@ data_prep_group_var:
 
 date_column: "date"
 date_format: "%d-%m-%Y"
-start_date: "2022-01-01"
+start_date: "2022-08-01"
 end_date: "2024-06-01"
 
 dv_column: "market_share"
@@ -21,3 +21,17 @@ dv_column: "market_share"
 null_percentage: 0.5
 
 scaling: "custom"
+
+
+###### Output Paths ######
+
+# Root directory path (can be the current directory)
+root_path: "./"
+
+# Output folder where all output files will be saved
+output_folder: "output"
+
+# Paths for specific output data
+filtered_data: "filtered_data.csv"
+no_null_imputed_data: "no_null_imputed_data.csv"
+scaled_data: "scaled_data.csv"
