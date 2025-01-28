@@ -199,7 +199,7 @@ def impute_groups(
     groups_to_drop = null_percentage[null_percentage > null_threshold].index
     groups_to_drop_list = groups_to_drop.to_list()
 
-    print(groups_to_drop_list)
+    print("Dropped_columns:", groups_to_drop_list)
     # Step 4: Filter out rows belonging to the identified groups
     df_filtered = df[
         ~df.set_index(group_by_columns).index.isin(groups_to_drop)
@@ -273,7 +273,7 @@ def scale_metrics(melted_data, idv_list, config):
     return scaled_df
 
 
-def main():
+def data_prepare():
     config_file_path = "config.yml"
     config = config_loading(config_file_path)
 
@@ -326,6 +326,8 @@ def main():
     ]
     pivoted_scaled_data.to_csv(paths["scaled_data_path"], index=False)
 
+    return scaled_data, idv_list, config
+
 
 if __name__ == "__main__":
-    main()
+    data_prepare()
