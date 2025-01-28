@@ -44,6 +44,7 @@ def build_output_paths(config):
             output_path, config["no_null_imputed_data"]
         ),
         "scaled_data_path": os.path.join(output_path, config["scaled_data"]),
+        "cfa_fit_data_path": os.path.join(output_path, config["cfa_fit_data"]),
     }
 
     return paths
@@ -326,7 +327,7 @@ def data_prepare():
     ]
     pivoted_scaled_data.to_csv(paths["scaled_data_path"], index=False)
 
-    return scaled_data, idv_list, config
+    return scaled_data, idv_list, config, paths
 
 
 if __name__ == "__main__":
