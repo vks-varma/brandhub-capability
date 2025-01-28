@@ -124,7 +124,7 @@ def perform_cfa_analysis(scaled_data, idv_list, config, cfa_py, paths):
     pillar_idv_dict = (
         idv_list.groupby("equity_pillar")["idv"].apply(list).to_dict()
     )
-    for group, group_df in scaled_data.groupby(["brand", "category"]):
+    for group, group_df in scaled_data.groupby(config["data_prep_group_var"]):
 
         # Pivot the data
         cfa_data = group_df.pivot(
