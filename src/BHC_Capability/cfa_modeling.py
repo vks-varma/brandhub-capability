@@ -42,8 +42,13 @@ def cfa_py(fa_str, scaled_data):
     cfa_summary["factor_str"] = fa_str
     # cfa_summary["Seed"] = seed
     cfa_summary["cfi"] = stats.loc["Value"]["CFI"]
-    cfa_summary["tli"] = stats.loc["Value"]["TLI"]
-    cfa_summary["rmsea"] = stats.loc["Value"]["RMSEA"]
+
+    if stats.loc["Value"]["RMSEA"] == np.inf:
+        cfa_summary["tli"] = 1
+        cfa_summary["rmsea"] = 0
+    else:
+        cfa_summary["tli"] = stats.loc["Value"]["TLI"]
+        cfa_summary["rmsea"] = stats.loc["Value"]["RMSEA"]
     cfa_summary = cfa_summary.rename(
         columns={
             "lval": "rhs",
