@@ -6,6 +6,20 @@ import semopy as sp
 import yaml
 from semopy import Model
 
+columns_list = [
+    "lhs",
+    "op",
+    "rhs",
+    "est.std",
+    "se",
+    "z",
+    "pvalue",
+    "factor_str",
+    "cfi",
+    "tli",
+    "rmsea",
+]
+
 
 def cfa_py(fa_str, scaled_data):
 
@@ -60,19 +74,6 @@ def cfa_py(fa_str, scaled_data):
         }
     )
     cfa_summary.replace({"op": {"~": "=~"}}, inplace=True)
-    columns_list = [
-        "lhs",
-        "op",
-        "rhs",
-        "est.std",
-        "se",
-        "z",
-        "pvalue",
-        "factor_str",
-        "cfi",
-        "tli",
-        "rmsea",
-    ]
 
     cfa_summary = cfa_summary[columns_list]
 
@@ -161,6 +162,8 @@ def perform_cfa_analysis(scaled_data, idv_list, config, cfa_py, paths):
                 final_results.append(results)
 
     cfa_fit_data = pd.concat(final_results, ignore_index=True)
+    col_arrangement = config["data_prep_group_var"] + columns_list
+    cfa_fit_data = cfa_fit_data[col_arrangement]
     cfa_fit_data.to_csv(paths["cfa_fit_data_path"], index=False)
 
     # Concatenate all results from all groups and pillars
