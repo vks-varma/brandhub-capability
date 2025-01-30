@@ -35,6 +35,46 @@ cfa_sampling_seeding:
 - 17
 - 19
 
+###### RF Model ######
+model_type: "RandomForest"
+model_config:
+  RandomForest:
+    grid_search:
+      max_depth: [2, 3, 4]
+      n_estimators: [15, 50, 100, 300, 500]
+      max_features: [2, 4, 10]
+      random_state: [42]
+      eval_metrics: []
+    random_state: 42
+  XGBoost:
+    grid_search:
+      max_depth: [2, 3]
+      n_estimators: [100, 500, 1000, 1500]
+      learning_rate: [0.01, 0.02]
+      random_state: [42]
+      eval_metrics: []
+    random_state: 42
+  RF_Ridge:
+    grid_search:
+      alpha: [0.001, 0.001, 0.01, 1, 5, 10, 15]
+      random_state: [42]
+    positive: false
+    random_state: 42
+  Corr_ridge:
+    grid_search:
+      alpha: [0.001, 0.01, 0.1, 1, 5, 10]
+      random_state: [42]
+    positive: false
+    random_state: 42
+  Brute_force:
+    grid_search:
+      alpha: [0.001, 0.01, 0.1, 1, 5, 10]
+      random_state: [42]
+    positive: false
+    random_state: 42
+
+cross_validation_number: 4
+
 
 ###### Output Paths ######
 
@@ -49,3 +89,5 @@ filtered_data: "filtered_data.csv"
 no_null_imputed_data: "no_null_imputed_data.csv"
 scaled_data: "scaled_data.csv"
 cfa_fit_data: "cfa_fit_data.csv"
+rf_fit_data: "rf_fit_data.csv"
+rf_act_pred_data: "rf_act_pred_data.csv"

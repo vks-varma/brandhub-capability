@@ -45,6 +45,10 @@ def build_output_paths(config):
         ),
         "scaled_data_path": os.path.join(output_path, config["scaled_data"]),
         "cfa_fit_data_path": os.path.join(output_path, config["cfa_fit_data"]),
+        "rf_fit_data_path": os.path.join(output_folder, config["rf_fit_data"]),
+        "rf_act_pred_data_path": os.path.join(
+            output_folder, config["rf_act_pred_data"]
+        ),
     }
 
     return paths
