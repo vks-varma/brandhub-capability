@@ -7,6 +7,7 @@ import yaml
 from semopy import Model
 
 columns_list = [
+    "seed",
     "lhs",
     "op",
     "rhs",
@@ -75,7 +76,7 @@ def cfa_py(fa_str, scaled_data):
     )
     cfa_summary.replace({"op": {"~": "=~"}}, inplace=True)
 
-    cfa_summary = cfa_summary[columns_list]
+    # cfa_summary = cfa_summary[columns_list]
 
     return cfa_summary
 
@@ -162,6 +163,7 @@ def perform_cfa_analysis(scaled_data, idv_list, config, cfa_py, paths):
                 final_results.append(results)
 
     cfa_fit_data = pd.concat(final_results, ignore_index=True)
+    print(cfa_fit_data.columns)
     col_arrangement = config["data_prep_group_var"] + columns_list
     cfa_fit_data = cfa_fit_data[col_arrangement]
     cfa_fit_data.to_csv(paths["cfa_fit_data_path"], index=False)

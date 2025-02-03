@@ -1,6 +1,10 @@
 from cfa_modeling import cfa_py, perform_cfa_analysis
 from data_preparation import data_prepare
-from rf_modeling import train_and_evaluate_group_models_parallel
+from rf_modeling import (
+    train_and_evaluate_group_models_parallel,  # (Parallel process function)
+)
+
+# from rf_modeling import  train_and_evaluate_group_models # (single process function)
 
 
 def main():
