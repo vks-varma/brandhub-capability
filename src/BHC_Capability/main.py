@@ -1,5 +1,6 @@
 from cfa_modeling import cfa_py, perform_cfa_analysis
 from data_preparation import data_prepare
+from post_modeling import scoring
 from rf_modeling import (
     train_and_evaluate_group_models_parallel,  # (Parallel process function)
 )
@@ -13,6 +14,7 @@ def main():
     rf_df, rf_act_pred_df = train_and_evaluate_group_models_parallel(
         config, scaled_data, idv_list, paths
     )
+    scoring(cfa_df, rf_df, scaled_data, idv_list, config)
 
 
 if __name__ == "__main__":

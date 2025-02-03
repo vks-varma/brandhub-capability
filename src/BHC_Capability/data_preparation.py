@@ -49,6 +49,16 @@ def build_output_paths(config):
         "rf_act_pred_data_path": os.path.join(
             output_folder, config["rf_act_pred_data"]
         ),
+        "pillar_weights_path": os.path.join(
+            output_folder, config["pillar_weights"]
+        ),
+        "pillar_data_path": os.path.join(output_folder, config["pillar_data"]),
+        "trend_past_data_path": os.path.join(
+            output_folder, config["trend_past_data"]
+        ),
+        "scaled_score_data_path": os.path.join(
+            output_folder, config["scaled_score_data"]
+        ),
     }
 
     return paths

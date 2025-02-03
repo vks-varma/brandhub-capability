@@ -2,7 +2,7 @@
 #################### Data Preparation ######################
 ############################################################
 
-input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\input_data_refined_4.csv"
+input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\input_data_refined_5.csv"
 idv_list: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\idv_list_.csv"
 
 granularity: 'weekly' #weekly or monthly
@@ -76,6 +76,19 @@ model_config:
 cross_validation_number: 4
 
 
+
+###### Post_Validation ######
+
+cfa_seed: 2
+cfa_target_col: 'est.std'
+rf_target_col: 'shap_values'
+
+trend_past_rolling_window: 13
+scale_level: 'category'
+
+
+
+
 ###### Output Paths ######
 
 # Root directory path (can be the current directory)
@@ -91,3 +104,7 @@ scaled_data: "scaled_data.csv"
 cfa_fit_data: "cfa_fit_data.csv"
 rf_fit_data: "rf_fit_data.csv"
 rf_act_pred_data: "rf_act_pred_data.csv"
+pillar_weights: "pillar_weights.csv"
+pillar_data: "pillar_data.csv"
+trend_past_data: "trend_data.csv"
+scaled_score_data: 'scaled_score_data.csv'
