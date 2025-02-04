@@ -129,4 +129,4 @@ def scoring(cfa_df, rf_df, scaled_data, idv_list, config, paths):
     pillar_weights.to_csv(paths["pillar_weights_path"], index=False)
     pillar_data.to_csv(paths["pillar_data_path"], index=False)
     trend_past_data.to_csv(paths["trend_past_data_path"], index=False)
-    scaled_score_data.to_csv(paths["pillar_weights_path"], index=False)
+    scaled_score_data.to_csv(paths["scaled_score_data_path"], index=False)

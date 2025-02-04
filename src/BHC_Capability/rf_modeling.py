@@ -425,8 +425,6 @@ def train_and_evaluate_group_models_parallel(
         "r2_score_all",
         "mape_all",
         "best_params_gridsearchcv",
-        "brand",
-        "category",
     ]
     rf_fit_col_arrangement = (
         config["data_prep_group_var"] + rf_fit_columns_list
