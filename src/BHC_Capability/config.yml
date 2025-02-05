@@ -122,4 +122,4 @@ scaled_score_data: 'scaled_score_data.csv'
 imp_rf_fit_data: "imp_rf_fit_data.csv"
 imp_rf_act_pred_data: "imp_rf_act_pred_data.csv"
 score_card_final_df: "score_card_final_df.csv"
-filtered_imp_model_results: "filtered_imp_model_results.csv"
+relative_imp_model_results: "filtered_imp_model_results.csv"

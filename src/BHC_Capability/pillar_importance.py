@@ -482,7 +482,7 @@ def scorecard_format(
 
     score_card_final_df.to_csv(paths["score_card_final_df_path"], index=False)
     filtered_imp_model_results.to_csv(
-        paths["filtered_imp_model_results_path"], index=False
+        paths["relative_imp_model_results_path"], index=False
     )
 
     return score_card_final_df, filtered_imp_model_results
