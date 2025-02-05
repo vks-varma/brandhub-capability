@@ -106,9 +106,9 @@ def trend_past_creation(pillar_data, config):
 def scaled_score_creation(pillar_data, config):
     df = pillar_data.copy()
 
-    df["group_mean"] = df.groupby(
-        [config["scale_level"], config["date_column"]]
-    )["score"].transform("mean")
+    df["group_mean"] = df.groupby([config["date_column"], "pillar"])[
+        "score"
+    ].transform("mean")
 
     # Scale scores such that group mean = 100
     df["scaled_score"] = (df["score"] / df["group_mean"]) * 100
@@ -130,3 +130,5 @@ def scoring(cfa_df, rf_df, scaled_data, idv_list, config, paths):
     pillar_data.to_csv(paths["pillar_data_path"], index=False)
     trend_past_data.to_csv(paths["trend_past_data_path"], index=False)
     scaled_score_data.to_csv(paths["scaled_score_data_path"], index=False)
+
+    return pillar_weights, pillar_data, trend_past_data, scaled_score_data

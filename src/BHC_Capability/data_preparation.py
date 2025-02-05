@@ -59,6 +59,18 @@ def build_output_paths(config):
         "scaled_score_data_path": os.path.join(
             output_folder, config["scaled_score_data"]
         ),
+        "imp_rf_fit_data_path": os.path.join(
+            output_folder, config["imp_rf_fit_data"]
+        ),
+        "rf_act_pred_data_path": os.path.join(
+            output_folder, config["imp_rf_act_pred_data"]
+        ),
+        "score_card_final_df_path": os.path.join(
+            output_folder, config["score_card_final_df"]
+        ),
+        "filtered_imp_model_results_path": os.path.join(
+            output_folder, config["filtered_imp_model_results"]
+        ),
     }
 
     return paths

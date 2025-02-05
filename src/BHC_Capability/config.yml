@@ -77,7 +77,7 @@ cross_validation_number: 4
 
 
 
-###### Post_Validation ######
+###### Scoring ######
 
 cfa_seed: 2
 cfa_target_col: 'est.std'
@@ -85,6 +85,17 @@ rf_target_col: 'shap_values'
 
 trend_past_rolling_window: 13
 scale_level: 'category'
+
+###### Importance ######
+importance_model_type: "RandomForest"
+importance_model_config:
+  RandomForest:
+    grid_search:
+      max_depth: [2, 3, 4, 5, 6]
+      n_estimators: [15, 50, 100, 500]
+      max_features: [2, 4, 10]
+      random_state: 42
+    random_state: 42
 
 
 
@@ -108,3 +119,7 @@ pillar_weights: "pillar_weights.csv"
 pillar_data: "pillar_data.csv"
 trend_past_data: "trend_data.csv"
 scaled_score_data: 'scaled_score_data.csv'
+imp_rf_fit_data: "imp_rf_fit_data.csv"
+imp_rf_act_pred_data: "imp_rf_act_pred_data.csv"
+score_card_final_df: "score_card_final_df.csv"
+filtered_imp_model_results: "filtered_imp_model_results.csv"
