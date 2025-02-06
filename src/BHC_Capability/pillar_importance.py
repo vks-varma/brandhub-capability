@@ -470,7 +470,7 @@ def scorecard_format(
     # Filter model importance results
     filtered_imp_model_results = imp_rf_df[
         imp_rf_df["model_type"] == config["importance_model_type"]
-    ][["brand", "category", "shap_features", "shap_values"]].copy()
+    ][config["data_prep_group_var"] + ["shap_features", "shap_values"]].copy()
 
     # Calculate the sum of SHAP values and relative importance
     sum_shap_values = filtered_imp_model_results.groupby(
