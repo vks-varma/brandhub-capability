@@ -2,7 +2,7 @@
 #################### Data Preparation ######################
 ############################################################
 
-input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\input_data_refined_5.csv"
+input_data: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\harmonised_mock_data.csv"
 idv_list: "D:\\BRAND_HUB_PROJECT\\brandhub-capability\\src\\BHC_Capability\\data\\idv_list_.csv"
 
 granularity: 'weekly' #weekly or monthly
