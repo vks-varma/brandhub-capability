@@ -1,47 +1,85 @@
-# brandhub-capability
+# Introduction to BHC Capability
 
- %md
- **Guidelines for Writing Production Grade for BHC/MMX**
+## Overview
+BHC Capability is a data-driven framework designed to analyze and model hierarchical data structures such as **Category-Brand**, **Country-Vendor-Category-Brand**, and other business dimensions. The project utilizes **harmonized data** and an **IDV list** containing features that map to specific pillars, enabling advanced data processing and trend analysis.
 
- To ensure consistency and maintain best practices, please follow these steps when working on brand hub tasks:
- (you will better understand these, once you have looked at latest BHC codes)
+## Data Structure
+The project operates on a hierarchical data model, where data is categorized at multiple levels, such as:
+- **Category → Brand**
+- **Country → Vendor → Category → Brand**
 
- Possible Conditions
-   - time_granularity = 'weekly' or 'monthly'
-   - refresh_type = 'model_scoring' or 'model_refresh'
+## Pillar Creation Process
+To generate meaningful insights, we create **pillars** by applying transformations and modeling techniques on the harmonized dataset. The process follows these key steps:
 
- 1. **Time Granularity**
-    - Always set `time_granularity` to either `monthly` or `weekly`.
-    - Use lowercase letters with underscores as separators (e.g., `monthly`, `weekly`).
+### 1. **Feature Mapping to Pillars**
+- The IDV list contains various features that are mapped to predefined pillars.
+- Feature transformation methods include:
+  - **Custom Scaling**
+  - **Standard Scaling**
+  - **Min-Max Scaling**
+  - **Imputation** for handling missing values
 
- 2. **File Configuration**
-    - Declare all files created in a previous stage and used in the next stage under `input_config`.
-    - Any common files that remain unchanged (e.g., mappings) should be declared under `mapping_config`.
-    - Place all output files under `output_config`.
-    - Pass `storage_options` as an additional layer for file handling.
+### 2. **Weightage Calculation**
+- We utilize **Confirmatory Factor Analysis (CFA)** and **Random Forest SHAP values** to determine the importance of each feature in relation to its pillar.
+- These weightages are merged to derive a final weight for each metric within the pillar structure.
 
- 3. **Refresh Configuration**
-    - Place all refresh-related configurations under `refresh_config` (e.g., `start_date`, `end_date`, `time_granularity`, `scoring`, `modelling`).
+### 3. **Pillar Creation**
+- Using the derived weightages, we construct the **pillar values** from the harmonized dataset.
+- The processed pillar data is then used for further modeling.
 
- 4. **Feature Engineering and Additional Configurations**
-    - If additional configurations are needed (e.g., for data preparation, feature engineering, or modelling), feel free to add them.
-    - Append new configurations at the end of the flow, maintaining the order: `input_config`, `output_config`, `mapping_config`, `refresh_config`, and `feat_eng_config`.
+## Importance Modeling
+Once the pillars are created, we conduct an **importance analysis** using historical trend data:
+- We analyze past pillar data trends.
+- A **hierarchical importance model** is built for each level in the hierarchy.
 
- 5. **Code Structure**
-    - Ensure that functions do not exceed 100–150 lines of code.
-    - Avoid using loops within functions whenever possible; use vectorization techniques instead.
-    - For running operations across multiple entities (e.g., brands or categories), use loops to call the function externally rather than embedding loops within the function.
+## Conclusion
+BHC Capability provides a structured approach to understanding the relationships between features, pillars, and hierarchical business structures. By leveraging **CFA, SHAP values, and importance modeling**, it enables data-driven decision-making and deeper insights into key business metrics.
 
- 6. **Intermediate and Final Data Guidelines**
-    - Ensure the following structure for data:
-      - All keys should be placed on the left, ordered hierarchically (e.g., `vendor x brand x sub_brand x category`).
-      - Independent variables (IDVs) should be on the right.
-      - Date column should be seperate these (e.g., `brand x category x date x eq_volume x amazon_spends ...`).
 
- 7. **Key or Group Variables**
-    - For tasks involving model iterations (e.g., running a model for `brand x category x pillar`), create a key or `group_var`.
-    - Pass this variable into the code to enable automatic configuration for future iterations.
-    - If implementing this is overly complex, it can be skipped.
+### Steps to Build HTML Documentation
 
- By following these guidelines, we can ensure clarity, consistency, and scalability in our processes.
+1. **Navigate to the Documentation Directory**
+   Open a terminal or command prompt and change to the root directory of your Sphinx documentation (where the `Makefile` or `make.bat` is located).
 
+   ```sh
+   cd /path/to/your/docs
+   ```
+
+2. **Run the Build Command**
+   If you are using Linux or macOS, run:
+
+   ```sh
+   make html
+   ```
+
+   If you are using Windows, run:
+
+   ```sh
+   .\make.bat html
+   ```
+
+3. **View the Generated Documentation**
+   Once the build process is complete, open the generated HTML documentation by navigating to:
+
+   ```
+   build/html/index.html
+   ```
+
+   You can open it in a web browser to view the documentation.
+
+### Troubleshooting
+
+- If there are errors, ensure all dependencies are installed:
+
+  ```sh
+  pip install -r requirements.txt
+  ```
+
+- If the documentation does not update correctly, try cleaning the build directory before rebuilding:
+
+  ```sh
+  make clean
+  make html
+  ```
+
+This process should successfully generate and update your Sphinx documentation. 🚀
