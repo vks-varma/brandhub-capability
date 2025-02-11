@@ -23,7 +23,18 @@ columns_list = [
 
 
 def cfa_py(fa_str, scaled_data):
+    """cfa function using semopy
 
+    Args
+    ----------
+        fa_str (str): formula string for the cfa
+        scaled_data (pd.DataFrame): Data scaled from the preprocessing
+
+    Returns
+    ----------
+    pd.DataFrame
+        Data containing results on the CFA.
+    """
     model = Model(fa_str, cov_diag=False)
     model.fit(scaled_data, solver="L-BFGS-B")  # , estimator="GLS")
 
@@ -87,15 +98,18 @@ def process_cfa_samples(
     """
     Processes CFA samples, fits CFA to each sample, and concatenates the results.
 
-    Args:
+    Args
+    ----------
         cfa_py (function): Function to perform CFA.
         factor_str (str): The CFA factor string.
         cfa_data_filtered (DataFrame): The original filtered DataFrame.
         config (dict): Configuration dictionary with sampling seeds and group variables.
         group_tuple (tuple): Tuple containing values for `data_prep_group_var`.
 
-    Returns:
-        DataFrame: Concatenated results with additional columns.
+    Returns
+    ----------
+    pd.DataFrame
+        Concatenated results with additional columns.
     """
     cfa_data_filtered_list = []
 
@@ -123,8 +137,20 @@ def process_cfa_samples(
 
 
 def perform_cfa_analysis(scaled_data, idv_list, config, cfa_py, paths):
-    """
-    Performs CFA analysis across multiple groups, equity pillars, and samples.
+    """Perform cfa for level wise
+
+    Args
+    ----------
+        scaled_data (pd.Dataframe): sclaed harmonized data
+        idv_list (pd.Dataframe): idv_list df
+        config (dict): configuration function
+        cfa_py (function): cfa function defined in the program
+        paths (dict): paths to save the outputs
+
+    Returns
+    ----------
+    pd.DataFrame
+        cfa fit df for further analysis.
     """
     group_list = [config["date_column"]] + config["data_prep_group_var"]
     final_results = []  # To store results from all groups and equity pillars

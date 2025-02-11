@@ -6,6 +6,17 @@ import yaml
 
 # functions
 def config_loading(config_path: str):
+    """Loading config file using the path
+
+    Args
+    ----------
+        config_path (str): path of the config.yml file
+
+    Returns
+    ----------
+        dict
+            Configuration in dictionary format.
+    """
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
     return config
@@ -15,7 +26,8 @@ def build_output_paths(config):
     """
     Build full paths for output files based on the configuration.
 
-    Args:
+    Args
+    ----------
         config (dict): Configuration dictionary with keys:
             - root_path: Root directory path.
             - output_folder: Folder where output files will be saved.
@@ -23,9 +35,11 @@ def build_output_paths(config):
             - no_null_imputed_data_filename: Filename for no-null imputed data.
             - scaled_data_filename: Filename for scaled data.
 
-    Returns:
-        dict: A dictionary with keys 'filtered_data_path', 'no_null_imputed_data_path',
-              and 'scaled_data_path', containing the full paths for the respective files.
+    Returns
+    ----------
+        dict
+            A dictionary with keys 'filtered_data_path', 'no_null_imputed_data_path',
+            and 'scaled_data_path', containing the full paths for the respective files.
     """
     # Get the root path and output folder
     root_path = config["root_path"]
@@ -77,6 +91,18 @@ def build_output_paths(config):
 
 
 def date_dv_columns_check(data: pd.DataFrame, config: dict):
+    """Checkiing columns which are mandatory which is mentioned in the config
+
+    Args
+    ----------
+        data (pd.DataFrame): raw data
+        config (dict): configuration dictionary
+
+    Raises
+    ----------
+        ValueError
+            Raised if any of the columns are missing.
+    """
     required_columns = [config["date_column"], config["dv_column"]] + config[
         "data_prep_group_var"
     ]
@@ -93,6 +119,17 @@ def date_dv_columns_check(data: pd.DataFrame, config: dict):
 
 
 def data_date_conversion(data: pd.DataFrame, config: dict):
+    """date converstion to pd.datetime datatype
+
+    Args
+    ----------
+        data (pd.DataFrame): raw data loaded
+        config (dict): configuration dictionary
+
+    Returns
+    ----------
+        pd.DataFrame: DataFrame with converted modified date column
+    """
     data[config["date_column"]] = pd.to_datetime(
         data[config["date_column"]], format=config["date_format"]
     )
@@ -100,6 +137,17 @@ def data_date_conversion(data: pd.DataFrame, config: dict):
 
 
 def idv_list_loading(config: dict):
+    """Loading idv_list which containes the idv dv relationship and details
+
+    Args
+    ----------
+        config (dict): configuration dictionary
+
+    Returns
+    ----------
+        pd.DataFrame
+            Loaded dataframe of idv_list.
+    """
     idv = pd.read_csv(config["idv_list"])
     return idv
 
@@ -110,15 +158,22 @@ def check_idv_columns_in_data(
     """
     Checks if all columns in df1 are present as rows in a specified column of df2.
 
-    Parameters:
+    Parameters
+    ----------
+
     - data (pd.DataFrame): The first DataFrame whose columns need to be checked.
     - idv_list (pd.DataFrame): The second DataFrame with the reference column.
     - column_name (str): The column in df2 that should contain all column names of df1.
 
-    Returns:
-    - None: If all columns are found, the function silently passes.
+    Returns
+    ----------
 
-    Raises:
+        None
+            If all columns are found, the function silently passes.
+
+    Raises
+    ----------
+
     - ValueError: If any columns are missing, it raises an error with the missing columns.
     """
     # Get the list of columns from df1
@@ -144,6 +199,17 @@ def check_idv_columns_in_data(
 
 
 def data_loading(config: dict):
+    """Loadind all the data and checking if all the neccesary columns are there in each data for further analysis.
+
+    Args
+    ----------
+        config (dict): configuration dictionary
+
+    Returns
+    ----------
+        tuple
+            (raw_data, idv_list)
+    """
 
     input_data = pd.read_csv(config["input_data"])
     date_dv_columns_check(input_data, config)
@@ -155,6 +221,18 @@ def data_loading(config: dict):
 
 
 def column_arrangement(config: dict, idv_list: pd.DataFrame):
+    """column arrangement format
+
+    Args
+    ----------
+        config (dict): configuration dictionary
+        idv_list (pd.DataFrame): idv_list dictionary
+
+    Returns
+    ----------
+        pd.DataFrame
+            Rearranged df.
+    """
     sorted_idv_list = sorted(idv_list["idv"].tolist())
     sorted_idv_list
     cols_arrangement = (
@@ -169,11 +247,14 @@ def column_arrangement(config: dict, idv_list: pd.DataFrame):
 def filter_by_data_date_range(data: pd.DataFrame, config: dict):
     """Filtering date range for the data processing and further analysis
 
-    Args:
+    Args
+    ----------
         data (DataFrame): Harmonized_processed_data to filter out the date range
         config (dict): configuration dictionary
-    Returns:
-        DataFrame: Data with filtered date range
+    Returns
+    ----------
+        DataFrame
+            Data with filtered date range.
     """
     data["date"] = pd.to_datetime(data["date"], utc=False)
 
@@ -207,14 +288,17 @@ def impute_groups(
     Drop rows for specific combinations of columns where more than the specified percentage of the 'value' column is null,
     and impute missing values for groups with less than the threshold.
 
-    Parameters:
+    Parameters
+    ----------
     - df (pd.DataFrame): The DataFrame to process.
     - group_by_columns (list): List of columns to group by.
     - null_threshold (float): The threshold of null percentage for which rows will be dropped.
     - imputation_method (str): The method for imputing missing values ('mean', 'median', 'mode').
 
-    Returns:
-    - pd.DataFrame: The DataFrame with rows removed and missing values imputed.
+    Returns
+    ----------
+        pd.DataFrame
+            The DataFrame with rows removed and missing values imputed.
     """
     # Step 1: Group by specified columns
     grouped = df.groupby(group_by_columns)
@@ -256,6 +340,15 @@ def impute_groups(
 
 # Scaling Function
 def scale_metrics(melted_data, idv_list, config):
+    """Scaling the metrics with idv_list or config
+
+    Args
+    ----------
+        melted_data (pd.Dataframe): scaled data
+        idv_list (pd.Dataframe): idv list df
+        config (dict): configuration dict
+    """
+
     def apply_scaling(group):
         metric_name = group["metric"].iloc[0]
         # Skip scaling for the dependent variable
@@ -301,6 +394,13 @@ def scale_metrics(melted_data, idv_list, config):
 
 
 def data_prepare():
+    """Function with all the data preprocessing function and saves the outputs
+
+    Returns
+    ----------
+        tuple
+            Contains all DataFrames processed and loaded.
+    """
     config_file_path = "config.yml"
     config = config_loading(config_file_path)
 

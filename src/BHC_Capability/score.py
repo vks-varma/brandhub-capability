@@ -3,6 +3,22 @@ import pandas as pd
 
 
 def data_merge(cfa_df, rf_df, idv_list, config):
+    """
+    Merge CFA and RF data based on pillars and metrics.
+
+    Args
+    ----------
+        cfa_df (pd.DataFrame): CFA results dataframe.
+        rf_df (pd.DataFrame): RF model results dataframe.
+        idv_list (pd.DataFrame): List of independent variables and their corresponding pillars.
+        config (dict): Configuration dictionary.
+
+    Returns
+    ----------
+        pd.DataFrame
+            Merged dataframe containing combined CFA and RF results.
+    """
+
     data_group = config["data_prep_group_var"]
     # FIXME: should we do this filtering in cfa itself?
     cfa_filtered = cfa_df[
@@ -37,6 +53,20 @@ def data_merge(cfa_df, rf_df, idv_list, config):
 
 
 def weight_creation(merged_df, config):
+    """
+    Create weights by normalizing CFA and RF values within each group.
+
+    Args
+    ----------
+        merged_df (pd.DataFrame): Dataframe containing merged CFA and RF values.
+        config (dict): Configuration dictionary.
+
+    Returns
+    ----------
+        pd.DataFrame
+            Dataframe with calculated weights.
+    """
+
     weight_creation_df = merged_df.copy()
     # Normalize cfa_value and shap_values within each group
     weight_creation_df[config["cfa_target_col"]] = weight_creation_df.groupby(
@@ -84,6 +114,20 @@ def pillar_creation(weight_df, scaled_data, config):
 
 
 def trend_past_creation(pillar_data, config):
+    """
+    Compute past trend values using a rolling average.
+
+    Args
+    ----------
+        pillar_data (pd.DataFrame): Dataframe containing pillar scores over time.
+        config (dict): Configuration dictionary with rolling window size.
+
+    Returns
+    ----------
+        pd.DataFrame
+            Dataframe with an additional 'trend_past' column.
+    """
+
     trend_past = pillar_data.sort_values(
         by=config["data_prep_group_var"] + ["pillar", config["date_column"]]
     ).copy()
@@ -104,6 +148,20 @@ def trend_past_creation(pillar_data, config):
 
 
 def scaled_score_creation(pillar_data, config):
+    """
+    Create scaled scores by normalizing pillar scores within each time period.
+
+    Args
+    ----------
+        pillar_data (pd.DataFrame): Dataframe containing pillar scores.
+        config (dict): Configuration dictionary with required column names.
+
+    Returns
+    ----------
+        pd.DataFrame
+            Dataframe with an additional 'scaled_score' column.
+    """
+
     df = pillar_data.copy()
 
     df["group_mean"] = df.groupby([config["date_column"], "pillar"])[
@@ -120,6 +178,25 @@ def scaled_score_creation(pillar_data, config):
 
 
 def scoring(cfa_df, rf_df, scaled_data, idv_list, config, paths):
+    """
+    Execute the full scoring process, including data merging, weight creation,
+    pillar computation, trend calculation, and score scaling.
+
+    Args
+    ----------
+        cfa_df (pd.DataFrame): CFA results dataframe.
+        rf_df (pd.DataFrame): Random forest feature importance dataframe.
+        scaled_data (pd.DataFrame): Scaled input data for modeling.
+        idv_list (pd.DataFrame): List of independent variables and their mappings.
+        config (dict): Configuration dictionary.
+        paths (dict): Dictionary containing file paths for saving results.
+
+    Returns
+    ----------
+        tuple
+            Dataframes for pillar weights, pillar data, trend past data, and scaled scores.
+    """
+
     merged_df = data_merge(cfa_df, rf_df, idv_list, config)
     pillar_weights = weight_creation(merged_df, config)
     pillar_data = pillar_creation(pillar_weights, scaled_data, config)

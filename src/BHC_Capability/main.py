@@ -14,6 +14,7 @@ from score import scoring
 
 
 def main():
+    """imports all the functions from different file and streamline to do the entire process"""
     scaled_data, idv_list, config, paths = data_prepare()
     cfa_df = perform_cfa_analysis(scaled_data, idv_list, config, cfa_py, paths)
     rf_df, rf_act_pred_df = train_and_evaluate_group_models_parallel(

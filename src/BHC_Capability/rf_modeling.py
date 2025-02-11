@@ -24,15 +24,18 @@ def model_data_prep(
     """
     Prepare model data by splitting into training and testing sets.
 
-    Parameters:
+    Parameters
+    ----------
     model_idv_dv_df (DataFrame): The dataset containing independent and dependent variables.
     col_available (list): List of column names to be used as independent variables.
     config (dict): Configuration dictionary containing the dependent variable column name.
     test_size_ratio (float): Proportion of the dataset to be used as the test set.
     shuffle (bool): Whether to shuffle the data before splitting.
 
-    Returns:
-    tuple: train_x, test_x, train_y, test_y
+    Returns
+    ----------
+        tuple
+            train_x, test_x, train_y, test_y
     """
     idvs = model_idv_dv_df[col_available]
     dv = model_idv_dv_df[config["dv_column"]]
@@ -51,15 +54,21 @@ def train_and_evaluate_model(config, train_x, train_y):
     """
     Train and evaluate a machine learning model based on the provided configuration.
 
-    Parameters:
+    Parameters
+    ----------
     config (dict): Configuration dictionary containing model details and hyperparameters.
     train_x (DataFrame): Training features.
     train_y (Series): Training target.
 
-    Returns:
-    regressor (object): Trained model.
-    feat_importance (DataFrame): Feature importance values.
-    feat_df (DataFrame): SHAP feature importance values.
+    Returns
+    ----------
+        regressor : object
+            Trained model.
+        feat_importance : DataFrame
+            Feature importance values.
+        feat_df : DataFrame
+            SHAP feature importance values.
+
     """
     # Select model class based on config
     if config["model_type"] == "RandomForest":
@@ -150,7 +159,8 @@ def evaluate_model_performance(
     """
     Evaluate model performance and compute various metrics.
 
-    Parameters:
+    Parameters
+    ----------
     config (dict): Configuration dictionary containing model details and hyperparameters.
     regressor (object): Trained model.
     train_x (DataFrame): Training features.
@@ -163,9 +173,12 @@ def evaluate_model_performance(
     shap_df (DataFrame): SHAP feature importance values.
     search (GridSearchCV): Grid search object containing best parameters.
 
-    Returns:
-    results_all_model (DataFrame): Model evaluation results and feature importance.
-    actual_vs_predicted (DataFrame): Actual vs predicted values for the full dataset.
+    Returns
+    ----------
+        results_all_model : DataFrame
+            Model evaluation results and feature importance.
+        actual_vs_predicted : DataFrame
+            Actual vs predicted values for the full dataset.
     """
     # Generate Predictions
     y_pred_train = regressor.predict(train_x)
@@ -252,13 +265,16 @@ def train_and_evaluate_group_models(config, scaled_data, idv_list, paths):
     Function to train and evaluate models for each group in the scaled data,
     then return concatenated results.
 
-    Args:
+    Args
+    ----------
         config (dict): Configuration dictionary with necessary columns and parameters.
         scaled_data (pd.DataFrame): The input data to train and evaluate the models on.
         idv_list (pd.DataFrame): The individual variable data for different equity pillars.
 
-    Returns:
-        pd.DataFrame: Concatenated results for both models and actual vs predicted values.
+    Returns
+    ----------
+        pd.DataFrame
+            Concatenated results for both models and actual vs predicted values.
     """
     # Prepare the group list and initialize result containers
     group_list = [config["date_column"]] + config["data_prep_group_var"]
@@ -378,7 +394,23 @@ def train_and_evaluate_group_models(config, scaled_data, idv_list, paths):
 def train_and_evaluate_group_models_parallel(
     config, scaled_data, idv_list, paths
 ):
-    """Optimized function for parallel group processing and efficient model training."""
+    """
+    Train and evaluate models for different groups in parallel.
+
+    Args
+    ----------
+        config (dict): Configuration dictionary.
+        scaled_data (pd.DataFrame): Scaled dataset containing metrics.
+        idv_list (pd.DataFrame): List mapping independent variables to pillars.
+        paths (dict): Dictionary containing file paths for saving results.
+
+    Returns
+    ----------
+        Tuple[pd.DataFrame, pd.DataFrame]:
+            - Dataframe containing random forest model results.
+            - Dataframe containing actual vs predicted values.
+    """
+
     # Prepare data once upfront
     group_list = [config["date_column"]] + config["data_prep_group_var"]
     pillar_idv_dict = (
@@ -449,7 +481,24 @@ def train_and_evaluate_group_models_parallel(
 def process_single_group(
     group, model_data, config, pillar_idv_dict, group_list
 ):
-    """Process a single group in parallel."""
+    """
+    Process a single group in parallel for model training and evaluation.
+
+    Args
+    ----------
+        group (tuple): The specific group being processed.
+        model_data (pd.DataFrame): Data for the given group.
+        config (dict): Configuration dictionary.
+        pillar_idv_dict (dict): Mapping of pillars to their independent variables.
+        group_list (list): List of grouping variables.
+
+    Returns
+    ----------
+        Tuple[pd.DataFrame, pd.DataFrame]:
+            - Dataframe containing model evaluation results.
+            - Dataframe containing actual vs predicted values.
+    """
+
     print(f"Processing group: {group}")
     group_results = []
     group_act_pred = []

@@ -21,15 +21,18 @@ def importance_model_data_prep(
     """
     Prepare model data by splitting into training and testing sets.
 
-    Parameters:
+    Parameters
+    ----------
     model_idv_dv_df (DataFrame): The dataset containing independent and dependent variables.
     col_available (list): List of column names to be used as independent variables.
     config (dict): Configuration dictionary containing the dependent variable column name.
     test_size_ratio (float): Proportion of the dataset to be used as the test set.
     shuffle (bool): Whether to shuffle the data before splitting.
 
-    Returns:
-    tuple: train_x, test_x, train_y, test_y
+    Returns
+    ----------
+        tuple
+            train_x, test_x, train_y, test_y.
     """
     idvs = model_idv_dv_df[col_available]
     dv = model_idv_dv_df[config["dv_column"]]
@@ -48,15 +51,20 @@ def importance_train_model(config, train_x, train_y):
     """
     Train and evaluate a machine learning model based on the provided configuration.
 
-    Parameters:
+    Parameters
+    ----------
     config (dict): Configuration dictionary containing model details and hyperparameters.
     train_x (DataFrame): Training features.
     train_y (Series): Training target.
 
-    Returns:
-    regressor (object): Trained model.
-    feat_importance (DataFrame): Feature importance values.
-    feat_df (DataFrame): SHAP feature importance values.
+    Returns
+    ----------
+        regressor : object
+            Trained model.
+        feat_importance : DataFrame
+            Feature importance values.
+        feat_df : DataFrame
+            SHAP feature importance values.
     """
     # Select model class based on config
     if config["importance_model_type"] == "RandomForest":
@@ -157,7 +165,8 @@ def importance_evaluate_model_performance(
     """
     Evaluate model performance and compute various metrics.
 
-    Parameters:
+    Parameters
+    ----------
     config (dict): Configuration dictionary containing model details and hyperparameters.
     regressor (object): Trained model.
     train_x (DataFrame): Training features.
@@ -170,9 +179,12 @@ def importance_evaluate_model_performance(
     shap_df (DataFrame): SHAP feature importance values.
     search (GridSearchCV): Grid search object containing best parameters.
 
-    Returns:
-    results_all_model (DataFrame): Model evaluation results and feature importance.
-    actual_vs_predicted (DataFrame): Actual vs predicted values for the full dataset.
+    Returns
+    ----------
+        results_all_model : DataFrame
+            Model evaluation results and feature importance.
+        actual_vs_predicted : DataFrame
+            Actual vs predicted values for the full dataset.
     """
     # Generate Predictions
     y_pred_train = regressor.predict(train_x)
@@ -255,7 +267,20 @@ def importance_evaluate_model_performance(
 def importance_train_and_evaluate_models(
     scaled_data, trend_data, idv_list, config
 ):
-    """Train and evaluate models sequentially and store results in DataFrames."""
+    """importance model training and evaluation as a single process
+
+    Args
+    ----------
+        scaled_data (pd.Dataframe): scaled data harmonized
+        trend_data (pd.Dataframe): trend_past of the pillar
+        idv_list (pd.Dataframe): idv list df
+        config (dict): configuration dictionary
+
+    Returns
+    ----------
+        tuple
+            Two DataFrames: one with SHAP values and one with actual vs predicted data.
+    """
 
     # Prepare dependent variable data
     dv_data = (
@@ -332,7 +357,23 @@ def importance_train_and_evaluate_models(
 def importance_process_group(
     group_df, group, importance_col_available, config
 ):
-    """Process a single group to train and evaluate the model."""
+    """
+    Process a single group to train and evaluate the model.
+
+    Args
+    ----------
+        group_df (pd.DataFrame): Dataframe containing the group's data.
+        group (tuple): Identifiers representing the group.
+        importance_col_available (list): List of available importance columns.
+        config (dict): Configuration dictionary.
+
+    Returns
+    ----------
+        Tuple[pd.DataFrame, pd.DataFrame]
+            - Results of all model evaluations.
+            - Actual vs predicted values.
+    """
+
     # Prepare data
     train_x, test_x, train_y, test_y, idvs, dv = importance_model_data_prep(
         group_df, importance_col_available, config
@@ -365,9 +406,24 @@ def importance_run_parallel_processing(
     scaled_data, trend_data, idv_list, config, paths
 ):
     """
-    Execute the data preparation and model training/evaluation
+    Execute data preparation and model training/evaluation
     with parallel processing across groups.
+
+    Args
+    ----------
+        scaled_data (pd.DataFrame): Scaled dataset containing metrics.
+        trend_data (pd.DataFrame): Dataset containing trend data for pillars.
+        idv_list (pd.DataFrame): List mapping independent variables to pillars.
+        config (dict): Configuration dictionary.
+        paths (dict): Dictionary containing file paths for saving results.
+
+    Returns
+    ----------
+        Tuple[pd.DataFrame, pd.DataFrame]:
+            - Dataframe containing random forest model results.
+            - Dataframe containing actual vs predicted values.
     """
+
     # Prepare dependent variable data
     dv_data = (
         scaled_data[scaled_data["metric"] == config["dv_column"]]
@@ -430,16 +486,20 @@ def scorecard_format(
     """
     Computes the score card and importance model results.
 
-    Args:
+    Args
+    ----------
         config (dict): Configuration settings.
         weight_scores (pd.DataFrame): DataFrame containing weights for metrics.
         scaled_data (pd.DataFrame): DataFrame with scaled values.
         scaled_pillar_data (pd.DataFrame): DataFrame containing pillar data.
         imp_rf_df (pd.DataFrame): DataFrame containing model importance results.
 
-    Returns:
-        score_card_final_df (pd.DataFrame): Final score card with calculated metric contributions.
-        filtered_imp_model_results (pd.DataFrame): Processed importance model results with relative importance.
+    Returns
+    ----------
+        score_card_final_df : pd.DataFrame
+            Final score card with calculated metric contributions.
+        filtered_imp_model_results : pd.DataFrame
+            Processed importance model results with relative importance.
     """
 
     # Merge weight scores with scaled data
