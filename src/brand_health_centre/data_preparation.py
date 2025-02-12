@@ -393,7 +393,7 @@ def scale_metrics(melted_data, idv_list, config):
     return scaled_df
 
 
-def data_prepare():
+def data_prepare(config_file_path: str = "config.yml"):
     """Function with all the data preprocessing function and saves the outputs
 
     Returns
@@ -401,7 +401,7 @@ def data_prepare():
         tuple
             Contains all DataFrames processed and loaded.
     """
-    config_file_path = "config.yml"
+
     config = config_loading(config_file_path)
 
     paths = build_output_paths(config)
