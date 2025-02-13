@@ -539,7 +539,12 @@ def scorecard_format(
     filtered_imp_model_results["relative_importance"] = (
         filtered_imp_model_results["shap_values"] / sum_shap_values
     )
-
+    cols = [config["date_column"]] + [
+        col
+        for col in score_card_final_df.columns
+        if col != config["date_column"]
+    ]
+    score_card_final_df = score_card_final_df[cols]
     score_card_final_df.to_csv(paths["score_card_final_df_path"], index=False)
     filtered_imp_model_results.to_csv(
         paths["relative_imp_model_results_path"], index=False
